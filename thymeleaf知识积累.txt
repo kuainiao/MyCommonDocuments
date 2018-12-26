@@ -1,0 +1,2 @@
+1，获取值并当做方法的参数：
+	例如：th:onclick="${'editNote('''+trade.id+''','''+trade.remark+''')'}"

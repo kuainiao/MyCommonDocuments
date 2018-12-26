@@ -1,0 +1,881 @@
+1，继承的回顾：
+	1，对于成员变量(不管是公有还是私有)的继承是空间的继承(空间增加)，数据的拷贝。
+	2，对于方法的继承是对方法使用权限的继承(空间没有增加)，方法片段(方法代码)没有被继承。
+	3，子类对于方法的重写，并没有覆盖掉父类的方法，而是在方法区开辟一个新的空间，把方法代码放进去。
+	4，静态方法在多态的前提下不存在覆盖(调用的还是父类的静态方法)，如果没有多态，会存在覆盖(调用的是自己的方法)
+
+2，多态：
+   真下转型：
+   Animal animal = new Animal();
+   Cat cat = (Cat) animal;  // java中不允许发生的，一旦发生将会抛出ClassCastException
+
+   假下转型：
+   Animal animal = new Cat();
+   Cat cat = (Cat) animal;
+
+
+3,Spring:Spring是一个容器，用于降低代码间的耦合度，根据不同的代码采用了IoC、AOP两种技术降低解耦合。
+
+
+4,IoC：控制反转，指将传统上由程序代码直接操控的对象调用权交给容器，通过容器来实现对象的装配和管理。
+       控制反转的两种实现方式：
+       1，依赖查找 DL：
+       2，依赖注入 DI(常用)：
+
+
+5,Spring需要导入的四个基础Core Container jar包:
+	Beans Core Context SpEL(Spring Expression)。如果使用log4j.jar包还需要使用另外一个jar包：com.springsource.org.apache.commons.logging.jar(作用是不仅仅只能使用log4j日志jar包，
+	还能使用其他的日志jar包)
+	
+	spring配置文件：
+	建立applicationContext.xml(名字可以自己写，不过建议使用applicationContext.xml),放在src下，其约束文件在：
+	E:\Tools\Spring\spring-framework-4.3.2.RELEASE\docs\spring-framework-reference\html  -> xsd-configuration.html中找，复制如下代码到applicationContext.xml文件中:
+	<?xml version="1.0" encoding="UTF-8"?>
+	<beans xmlns="http://www.springframework.org/schema/beans"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	</beans>
+
+	<!-- 注册Service 
+		底层其实是这样：SomeServiceImpl myService = new SomeServiceImpl();  创建了对象
+	-->
+	<bean id="myService" class="com.bjpowernode.service.SomeServiceImpl"/>
+
+	@Test
+	public void test02(){
+		// 创建容器对象,加载Spring配置文件
+		ApplicationContext ac = new ClassPathXmlApplicationContext("applicationContext.xml"); // 从类路径下查找配置文件
+		ISomeService service = (ISomeService) ac.getBean("myService");
+		service.doSome();
+	}
+
+	@Test
+	public void test03(){
+		// 创建容器对象,加载Spring配置文件
+		ApplicationContext ac = new FileSystemXmlApplicationContext("applicationContext.xml");  // 从当前应用的根找，这种方式应该把applicationContext.xml文件放在根路径下。
+		ISomeService service = (ISomeService) ac.getBean("myService");  // myService是对应bean中的id
+		service.doSome();
+	}
+
+	@Test
+	public void test04(){
+		// 创建容器对象,加载Spring配置文件
+		// 会从当前文件系统的D盘根目录下查找配置文件
+		ApplicationContext ac = new FileSystemXmlApplicationContext("d:/applicationContext.xml"); // 放在d盘下
+		ISomeService service = (ISomeService) ac.getBean("myService");  
+		service.doSome();
+	}
+
+	注意：我们一般放在src类目录下。
+	
+	下面的方法也能够实现
+	@Test
+	public void test05(){
+		// 创建BeanFactory容器
+		BeanFactory bf = new XmlBeanFactory(new ClassPathResource("applicationContext.xml"));
+		ISomeService service = (ISomeService) bf.getBean("myService");  
+		service.doSome();
+	}
+
+	ApplicationContext容器与BeanFactory容器的区别：
+	ApplicationContext容器在进行初始化时会将其中的所有Bean(对象)进行创建。
+	BeanFactory容器中的对象，在容器初始化时并不会被创建，而是在真正获取该对象时才会被创建。
+	
+	ApplicationContext容器的缺点：占用系统资源(内存、CPU等)
+	                        优点：响应速度快
+
+	BeanFactory容器的缺点：相对于ApplicationContext响应速度慢,
+	                 优点：不多占用系统资源
+
+	一般使用ApplicationContext容器。
+
+
+6，Bean的装配：
+   1，默认装配模式：执行无参构造器 .<init>()这是无参构造器，如果没有无参构造器的话会报错。
+      因为<bean id="myService" class="com.bjpowernode.service.SomeServiceImpl"/>，底层是通过反射机制的，newInstance()会调用无参构造器。
+
+
+   2，动态工厂Bean(详见02-beanAssemble -> com.bjpowernode.ba02)：
+    <!--注册动态工厂  -->
+    <bean id="factory" class="com.bjpowernode.ba02.ServiceFactory"/>
+	
+   <!--注册Service 动态工厂Bena -->
+   <bean id="myService" factory-bean="factory" factory-method="getSomeService"/>
+
+   @Test
+	public void test02(){
+		// 创建容器对象,加载Spring配置文件
+		String resource = "com/bjpowernode/ba02/applicationContext.xml";
+		ApplicationContext ac = new ClassPathXmlApplicationContext(resource); 
+		ISomeService service = (ISomeService) ac.getBean("myService");
+		service.doSome();
+	}
+
+   
+   3，静态工厂Bean(详见02-beanAssemble -> com.bjpowernode.ba03):
+	<!--calss后面还有factory-method表示不必new ServiceFactory对象，而是直接用该类的类名去调用后面的方法-->
+	<bean id="myService" class="com.bjpowernode.ba03.ServiceFactory" factory-method="getSomeService"/>
+
+	@Test
+	public void test01(){
+		// 创建容器对象,加载Spring配置文件
+		String resource = "com/bjpowernode/ba03/applicationContext.xml";
+		ApplicationContext ac = new ClassPathXmlApplicationContext(resource); 
+		ISomeService service = (ISomeService) ac.getBean("myService");
+		service.doSome();
+	}
+	
+	
+	Bean的作用域：
+	scope="prototype" 原型模式，其对象的创建时机不是在Spring容器初始化时创建，而是在代码中真正访问时才创建，类似于BeanFactory.
+		scope="singleton" 单例模式，其对象的创建时机是在Spring容器初始化时创建，是默认值。
+	<bean id="myService" class="com.bjpowernode.ba04.SomeServiceImpl" scope="prototype"/>
+
+	@Test
+	public void test01(){
+		// 创建容器对象,加载Spring配置文件
+		String resource = "com/bjpowernode/ba04/applicationContext.xml";
+		ApplicationContext ac = new ClassPathXmlApplicationContext(resource); 
+		
+		ISomeService service = (ISomeService) ac.getBean("myService");  
+		service.doSome();
+		
+		ISomeService service2 = (ISomeService) ac.getBean("myService");  
+		System.out.println("service == service2 " + (service == service2));  // false
+	}
+
+
+       4,  Bean后处理器(详见02-beanAssemble -> com.bjpowernode.ba05)：
+	
+	该类MyBeanPostProcessor要实现BeanPostProcessor接口
+	<!-- 注册Bean后处理器 ,该Bean没有id属性-->
+	<bean class="com.bjpowernode.ba05.MyBeanPostProcessor"/>  // Bean初始化完毕之前执行postProcessBeforeInitialization()方法
+
+	Bean后处理器的应用（详见详见02-beanAssemble -> com.bjpowernode.ba05）
+
+
+	5,生命周期的始末(了解)：
+
+	<bean id="myService" class="com.bjpowernode.ba06.SomeServiceImpl"
+			init-method="setUp" destroy-method="tearDown"/>
+
+	// 对于销毁方法的执行有两个条件：
+	// 1)当前的Bean需要是Singleton
+	// 2)需要手工关闭容器
+
+
+	6，Bean的11步(详见详见02-beanAssemble -> com.bjpowernode.ba07)(了解)：
+
+	7,<bean/>标签的id属性与name属性：
+	  一般情况下id属性与name属性的作用相同，但id属性值命名：必须以字母开头，可以包含字母、数字、下划线、连字符、句号、冒号。
+	  name属性值则可以包含各种字符。但是新版本id已经可以跟name一样了，可以包含各种字符了。所以我们还是用id。
+
+
+7，基于XML的DI(依赖注入)：
+	1，设值注入：要给Set方法
+	bean id="myStudent" class="com.bjpowernode.di01.Student">
+		<property name="name" value="张三"/>
+		<property name="age" value="23"/>
+		<property name="school" ref="myShool"/>   // 域属性(对象属性)，需要用ref
+	</bean>
+
+
+	2,构造注入：
+	
+	public Student(String name, int age, School school) {
+		super();
+		this.name = name;
+		this.age = age;
+		this.school = school;
+	}
+
+	<!--注册School -->
+	<bean id="myShool" class="com.bjpowernode.di02.School">
+		<property name="name" value="清华大学"/>
+	</bean>
+	
+	<!--注册Student  -->
+	<bean id="myStudent" class="com.bjpowernode.di02.Student">
+		<constructor-arg index="0" value="李四"/>
+		<constructor-arg index="1" value="24"/>
+		<constructor-arg index="2" ref="myShool"/>
+	</bean>
+	// 不需要无参构造器
+
+	可可以省略index（不推荐）: 不过要与构造方法保存一致
+	<constructor-arg value="李四"/>
+	<constructor-arg value="24"/>
+	<constructor-arg ref="myShool"/>
+
+	<!--直接写参数名  -->
+	<constructor-arg name="name" value="李四"/>
+	<constructor-arg name="age" value="24"/>
+	<constructor-arg name="school" ref="myShool"/>
+
+	注意：在工作中构造注入用得并不多，而是使用设值注入。
+
+	3，p-命名空间注入（了解）：依然需要使用Set方法
+	复制如下代码到applicationContext.xml文件下(粘到原本的xmlns:p下)：
+	 xmlns:p="http://www.springframework.org/schema/p"
+		
+	<!--注册School -->
+	<bean id="myShool" class="com.bjpowernode.di03.School" p:name="北京大学"/>
+	
+	<!--注册Student  -->
+	<bean id="myStudent" class="com.bjpowernode.di03.Student" p:name="王五" p:age="25" p:school-ref="myShool"/>
+
+
+	4,C命名空间构造注入：
+	复制如下代码到applicationContext.xml文件下(粘到原本的xmlns:p下)：
+	  xmlns:c="http://www.springframework.org/schema/c"
+	  <!--注册School -->
+	<bean id="myShool" class="com.bjpowernode.di04.School">
+		<property name="name" value="清华大学"/>
+	</bean>
+	<!--注册Student  -->
+	<bean id="myStudent" class="com.bjpowernode.di04.Student" c:name="赵六" c:age="26" c:school-ref="myShool"/>
+
+
+	5，集合属性注入（重点）：
+	详见 03-di -> com.bjpowernode.di05
+
+	数组，List，Set设值注入的简写：
+	
+	<!-- 如果对象属性的数组只有一个元素可以简写，多个元素就不行 -->
+	<property name="schools" ref="myShool"/>
+	
+	<!--数组简写  -->
+	<property name="myStrs" value="中国,北京"/>
+			
+	<!--List集合简写  -->
+	<property name="myList" value="大兴,亦庄"/>
+		
+	<!--Set集合简写  -->
+	<property name="mySet" value="大族企业湾,10号楼"/>
+
+
+	6，域属性(对象属性)的自动注入：
+	
+	byName方式：
+	实体类中：private School school; // 对象属性，也叫做域属性
+
+	<!--注册School -->
+	<bean id="school" class="com.bjpowernode.di07.School">   
+		<property name="name" value="清华大学"/>
+	</bean>
+	
+	<!--注册Student  
+		autowire="byName"会从容器中查找与实体类的域属性同名的Bean的id，并将其该Bean对象自动注入给该域属性
+	-->
+	<bean id="myStudent" class="com.bjpowernode.di07.Student" autowire="byName">
+		<property name="name" value="张三"/>
+		<property name="age" value="23"/>
+	</bean>
+
+
+	byType方式：只能找唯一的一个类，有多个相同的类会报错(包括子类)
+	<!--注册School -->
+	<bean id="mySchool" class="com.bjpowernode.di08.School">  // 可以把id删掉
+		<property name="name" value="清华大学"/>
+	</bean>
+	
+	<!-- <bean id="myPrimarySchool" class="com.bjpowernode.di08.PrimarySchool">
+		<property name="address" value="海淀区"/>
+	</bean> -->
+	
+	<!--注册Student  
+		autowire="byType"会从容器中查找与实体类的域属性类型具有is-a关系(包括子类)的Bean，并将其该Bean对象自动注入给该域属性
+	-->
+	<bean id="myStudent" class="com.bjpowernode.di08.Student" autowire="byType">
+		<property name="name" value="张三"/>
+		<property name="age" value="23"/>
+	</bean>
+
+
+	7，使用SPEL注入：
+	<!--注册School -->
+	<bean id="myPerson" class="com.bjpowernode.di09.Person">
+		<property name="pname" value="李四"/>
+		<!--实现年龄为一个随机数，范围为[0,50)  -->
+		<property name="page" value="#{T(java.lang.Math).random() * 50}"/>
+	</bean>
+	
+	
+	<bean id="myStudent" class="com.bjpowernode.di09.Student">
+		<!--需求：实现myStudent的名字以及年龄与myPerson的年龄一样，注意Person类要给get方法才能获取  -->
+		<property name="name" value="#{myPerson.pname}"/>
+		<property name="age" value="#{myPerson.page > 25 ? 25 : myPerson.page}"/>  <!--年龄超过25，按25计算  -->
+	</bean>
+
+	也可以在Person类中增加一个方法，用来计算年龄超过25，按25计算：
+	public int computeAge(){
+		return page > 25 ? 25 :page;
+	}  
+	然后调用该方法即可：
+	<property name="age" value="#{myPerson.computeAge()}"/>  <!--年龄超过25，按25计算  -->
+
+
+	8,内部Bean注入(了解)：
+	<!--注册Student  -->
+	<bean id="myStudent" class="com.bjpowernode.di10.Student">
+		<property name="name" value="张三"/>
+		<property name="age" value="23"/>
+		<property name="school" >
+			<bean class="com.bjpowernode.di10.School">
+				<property name="name" value="清华大学"/>
+			</bean>
+		</property>
+	</bean>
+
+
+	9,同类抽象Bean（了解）：
+	<!--同类抽象Bean  -->
+	<bean id="baseStudent" class="com.bjpowernode.di11.Student" abstract="true">
+		<property name="school" value="清华大学"/>
+		<property name="department" value="计算机系"/>
+	</bean>
+
+	<bean id="myStudent" parent="baseStudent">   // 继承自parent="baseStudent"
+		<property name="name" value="李四"/>
+		<property name="age" value="24"/>
+	</bean>
+
+	10,异类抽象Bean(了解):
+	<bean id="baseBean" abstract="true"> <!--abstract="true"说明不会创建该对象  -->
+		<property name="school" value="清华大学"/>
+		<property name="department" value="计算机系"/>
+	</bean>
+	
+	<bean id="myStudent" class="com.bjpowernode.di12.Student" parent="baseBean">
+		<property name="name" value="李四"/>
+		<property name="age" value="24"/>
+	</bean>
+	
+	<bean id="myTeacher" class="com.bjpowernode.di12.Teacher" parent="baseBean">
+		<property name="name" value="Recyo"/>
+		<property name="workAge" value="18"/>
+	</bean>
+
+	11,为应用指定多个Spring配置文件（重点）： 详见 03-di -> com.bjpowernode.di13
+	1，当多个配置文件是平等关系时：
+	String resource = "com/bjpowernode/di13/spring-*.xml";  // 使用通配符方式(前提是配置文件起名要符合)
+
+	2,当多个配置文件是包含关系时： 详见 03-di -> com.bjpowernode.di14
+	<import resource="classpath:com/bjpowernode/di14/spring-*.xml"/> 注意：使用通配符，总配置文件的命名不能够通过通配符把自己本身包含进去。所以主配置文件的命名一般与子配置文件不一样
+
+
+8,基于注解的DI：基本注解的使用   用于替换Bean的注册    详见 04-di-annottion -> com.bjpowernode.di01
+		
+		1,要在主配置文件中添加如下新的约束文件：
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+
+		2,注解需要使用spring-aop-4.3.2.RELEASE包
+
+		3,在配置文件中添加组件扫描器：
+		<!--组件扫描器  -->
+		<context:component-scan base-package="com.bjpowernode.di01"/>
+
+		另外两种写法：
+		<!--扫描com.bjpowernode这个包及其子包  -->
+		<context:component-scan base-package="com.bjpowernode"/>
+	
+	
+		<!--扫描com.bjpowernode这个包的子包(不包括自己)  -->
+		<context:component-scan base-package="com.bjpowernode.*"/>
+
+		// 与Component注解功能相同，但意义不同的注解还有三个：
+		// 1)@Repository：注解在Dao实现类上
+		// 2)@Service：注解在Service实现类上
+		// 3)@Controller：注解在SpringMVC的处理器上
+
+
+		域属性的注解式注入：
+		@Autowired  // byType方式的注解式注入
+		private School school; // 对象属性，也叫做域属性
+
+
+		@Autowired   // @Autowired 不能删
+		@Qualifier("mySchool")  // byName方式的注解式注入
+		private School school; // 对象属性，也叫做域属性
+
+		注解式Bean的生命始末(了解):
+		详见 04-di-annottion ->  com.bjpowernode.di03
+
+
+		JavaConfig：使用自己定义的java类来充当容器（了解）： 详见 04-di-annottion ->  com.bjpowernode.di04
+
+		使用Spring的Junit4测试：
+		导入spring-test-4.3.2.RELEASE.jar
+		详见 04-di-annottion ->  com.bjpowernode.di05
+
+
+		XML的优先级高于注解：注解修改的是源码，XML不是修改的源码，注解需要重新编译，使用XML不需要重新编译。
+				     注解不需要set方法（即使使用注解开发也不要去掉set方法，为了方便使用XML）
+
+
+9,aop编程的引入：AOP底层就是采用动态代理来实现
+	AOP编程环境的搭建：
+	1，导入两个新的jar包  spring-aop-4.3.2.RELEASE.jar   aopalliance-.jar(AOP联盟的jar包)
+
+
+	通知Advice：通知只能完成指定织入的时间点，而不能指定切入点。即通知把所有的连接点都变为了切入点。
+	1,前置通知：目标方法执行之前先执行  详见 07-aop -> com.bjpowernode.aop01
+	  
+	1.1 需要实现MethodBeforeAdvice接口
+
+	1.2  目标对象以及切面都要进行注册：
+	  <!--注册目标对象 -->
+	<bean id="someService" class="com.bjpowernode.aop01.SomeServiceImpl"/>
+	
+	<!--注册切面：通知  -->
+	<bean id="myAdvice" class="com.bjpowernode.aop01.MyMethodBeforeAdvice"/>
+
+	<!--生成代理对象  -->
+	<bean id="serviceProxy" class="org.springframework.aop.framework.ProxyFactoryBean"> <!--底层采用JDK的Proxy  -->
+		<!-- 指定目标对象 -->
+		<property name="target" ref="someService"></property>
+		<!-- <property name="targetName" value="someService"></property> --> <!--target和targetName用哪一个都可以  -->
+		<!--指定切面  -->
+		<property name="interceptorNames" value="myAdvice"></property>
+	</bean>
+
+
+	2，后置通知:  详见 07-aop -> com.bjpowernode.aop02
+	
+	2.1实现AfterReturningAdvice接口
+
+	2.2 注册：其他与上面一样
+
+	afterReturning()方法 // 后置通知：可以获取到目标方法的返回结果，但无法改变目标方法的返回的结果（因为该方法没有返回值）
+
+
+	3,环绕通知： 详见 07-aop -> com.bjpowernode.aop03
+	3.1 需要实现MethodInterceptor接口(联盟jar包的)
+
+	@Override
+	public Object invoke(MethodInvocation invocation) throws Throwable {
+		System.out.println("执行环绕通知：目标方法执行之前");
+		// 执行目标方法
+		Object result = invocation.proceed();
+		System.out.println("执行环绕通知：目标方法执行之后");
+		return result;
+	}
+	
+	// 环绕通知可以修改目标方法的返回结果
+
+	4,异常通知： 详见 07-aop -> com.bjpowernode.aop04
+	实现ThrowsAdvice接口，打开ThrowsAdvice接口源码，里面有四个注释掉的方法，从里面选择一个
+
+
+	捕获自定义异常：详见07-aop -> com.bjpowernode.aop05
+
+	异常抛出与捕获的区别：
+	抛出：外界(JVM或者其他方法)知道有异常
+	捕获：外界不知道有异常
+
+
+	5,为目标方法织入多个Advice：
+	详见07-aop -> com.bjpowernode.aop06
+	
+
+	6,无接口使用cglib：详见07-aop -> com.bjpowernode.aop07
+
+
+	7，有接口使用cglib：详见07-aop -> com.bjpowernode.aop08
+	添加如下代码：
+	<property name="proxyTargetClass" value="true"/>  或者	<property name="optimize" value="true"/> 这两个效果一样
+  
+
+	顾问（advisor ）：可以指定切入点，顾问把通知包装了。
+	1,名称匹配方法切入点顾问： 详见07-aop -> com.bjpowernode.aop09
+		<!--注册切面：顾问  -->
+		<bean id="myAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">  // 要注册类NameMatchMethodPointcutAdvisor
+		<property name="advice" ref="myAdvice"/>
+		<!--指定切入点  -->
+		<!-- <property name="mappedName" value="doFirst"/> -->
+		<!-- <property name="mappedNames" value="doFirst,doSecond"/>  --> <!-- 指定多个切入点 -->
+		<property name="mappedNames" value="*ir*"/>  <!--使用通配符指定，匹配的是简单方法名，注意与下面的正则表达式的比较  -->
+	</bean>
+
+
+
+	2，正则表达式切入点顾问
+	. 点号	表示任意单个字符
+	+ 加好	表示前一个字符出现一次或者多次
+	* 星号	表示前一个字符出现0次或者多次
+	
+	<!--注册切面：顾问  -->
+	<bean id="myAdvisor" class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice" ref="myAdvice"/>
+		<!--指定切入点  -->
+		<!-- <property name="pattern" value=".*doFirst"/>  -->  <!--这里的正则表达式匹配的对象是全限定方法名例如：com.bjpowernode.aop10.ISomeService.doFirst  -->
+		<property name="patterns" value=".*doFirst,.*doSecond"/>  // 指定多个切入点
+		<property name="pattern" value=".*doFirst|.*doSecond"/>   // 一般使用这种方式指定多个切入点
+	</bean>
+
+
+	自动代理生成器：解决当存在多个目标对象，就需要使用多次ProxyFactoryBean来创建多个代理对象，使配置文件变得臃肿的问题。
+	
+	1，默认advisor自动代理生成器：
+	<!--注册自动代理生成器  -->
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"/> <!--Bean后处理器的子类  -->
+	
+	ISomeService service = (ISomeService) ac.getBean("someService"); // 目标对象
+
+
+	2，Bean名称自动代理生成器：
+	<bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+		<property name="beanNames" value="someService"/>
+		<property name="interceptorNames" value="myAdvisor2"/>
+	</bean>
+
+	
+10,AspectJ对AOP的实现(重点)：AspectcJ也是一个较小的框架和Spring框架没有关系
+	
+	1,AspectcJ的五种通知：前置、后置、异常、环绕、最终(类似于try...catch中的finally)
+
+	
+	2,AspectJ的切入点表达式:
+	表达式的原型：
+	execution([modifiers-pattern]		访问权限类型   可省略
+		   ret-type-pattern		返回值类型
+		   [declaring-type-pattern]	全限定性类名    可省略
+		   name-pattern(param-pattern)  方法名(参数名)
+		   [throws-pattern]		抛出异常类型
+	
+
+	符号：
+	*	0至多个任意字符
+	..	用在方法参数中，表示任意多个参数;用在包名后，表示当前包及其子包路径
+	+	用在类名后，表示当前类及其子类;用在接口后，表示当前接口及其实现类
+
+	举例：
+	execution(public * *(..))	指定切入点为：任意公共方法
+	
+	execution(* *.service.*.*(..))   . service前只能是一级包
+	
+	execution(* *..service.*.*(..))  .. 表示service前几级包都可以
+
+	环境搭建：
+	1，导入jar包：aopalliance-.jar(AOP联盟的jar包)、aspectj的核心jar包aspectjweaver-1.6.8.jar、整合jar包spring-aspects-4.3.2.RELEASE.jar、spring-aop-4.3.2.RELEASE.jar
+	2,要使用aop标签，所以要引入aop的约束：复制如下代码到配置文件中替换之前的约束:
+	<?xml version="1.0" encoding="UTF-8"?>
+	<beans xmlns="http://www.springframework.org/schema/beans"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xmlns:aop="http://www.springframework.org/schema/aop" xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd"> 
+
+
+	3,基于注解的Aspectj的AOP编程：
+	3.1 前置通知：详见 08-aspectj -> com.bjpowernode.annotation
+	<!--注册切面  -->
+	<bean id="myAspect" class="com.bjpowernode.annotation.MyAspect"/>
+	
+	<!--注册目标对象  -->
+	<bean id="someService" class="com.bjpowernode.annotation.SomeServiceImpl"/>
+	
+	<!--注册AspectJ的自动代理  -->
+	<aop:aspectj-autoproxy/>
+
+	3.2后置通知： 详见 08-aspectj -> com.bjpowernode.annotation
+
+	3.3 环绕通知：
+	// 环绕通知
+	@Around("execution(* *..ISomeService.doSecond(..))")
+	public Object myAround(ProceedingJoinPoint pjp) throws Throwable{
+		System.out.println("执行环绕通知方法之前");
+		// 执行目标方法
+		Object result = pjp.proceed();
+		System.out.println("执行环绕通知方法之后");
+		
+		if(result != null){
+			result = ((String)result).toUpperCase();
+		}
+		return result;
+		
+	}
+
+	3.4 异常通知：
+	@AfterThrowing(value="execution(* *..ISomeService.doThird(..))",throwing="ex")
+	public void myAfterThrowing(Exception ex){
+		System.out.println("执行异常通知方法之后 ex=" + ex.getMessage());
+		
+	}
+
+	3.5 最终通知：不管是否有异常都会执行
+	// 最终通知
+	@After("execution(* *..ISomeService.doThird(..))")
+	public void myAfter(){
+		System.out.println("执行最终通知方法之后");
+		
+	}
+
+	3.6 定义切入点：
+	// 定义了一个切入点，叫doThirdPointcut()
+	@Pointcut("execution(* *..ISomeService.doThird(..))")
+	public void doThirdPointcut(){
+		
+	}
+	就可以用定义的切入点代替其他的切入点表达式，例如：
+	// 最终通知
+	@After("doThirdPointcut()")
+	public void myAfter(){
+		System.out.println("执行最终通知方法之后");
+		
+	}
+
+
+	4,基于XML的Aspectj的AOP编程（重点）: 5种通知详见  08-aspectj -> com.bjpowernode.xml
+	<!--注册切面  -->
+	<bean id="myAspect" class="com.bjpowernode.xml.MyAspect"/>
+	
+	<!--注册目标对象  -->
+	<bean id="someService" class="com.bjpowernode.xml.SomeServiceImpl"/>
+	
+	<!-- AOP配置 -->
+	<aop:config>
+		<aop:aspect  ref="myAspect">
+			<aop:before method="myBefore" pointcut="execution(* *..ISomeService.doFirst(..))"/>
+			<aop:before method="myBefore(org.aspectj.lang.JoinPoint)" pointcut="execution(* *..ISomeService.doFirst(..))"/>  // 执行另外一个myBefore(带参数的)
+		</aop:aspect>
+	</aop:config>
+	注意：如果只有一个带参数的myBefore(JoinPoint jp)方法，不给参数<aop:before method="myBefore" pointcut="execution(* *..ISomeService.doFirst(..))"/>这样也能执行到
+
+	为解决代码冗余还可以这样做：
+	<!-- AOP配置 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* *..ISomeService.doFirst(..))" id="doFirstPointcut"/>
+		<aop:pointcut expression="execution(* *..ISomeService.doSecond(..))" id="doSecondPointcut"/>
+		<aop:pointcut expression="execution(* *..ISomeService.doThird(..))" id="doThirdPointcut"/>
+		<aop:aspect  ref="myAspect">
+			<aop:before method="myBefore" pointcut-ref="doFirstPointcut"/>
+			<aop:before method="myBefore(org.aspectj.lang.JoinPoint)" pointcut-ref="doFirstPointcut"/>
+		</aop:aspect>
+	</aop:config>
+
+
+
+11，Spring与DAO：是Spring与IoC、Spring与AOP的应用。
+	1，Spring与JDBC模板：IoC的应用
+	
+	常用的数据库连接池主要是使用两种jar包：DBCP或者c3p0
+	1.1 导入jar包：spring-jdbc-4.3.2.RELEASE.jar、spring-tx-4.3.2.RELEASE.jar(关于事务的)、c3p0-0.9.1.2.jar(连接池)
+			或者commons-dbcp2-2.2.0.jar和commons-pool2-2.5.0.jar(使用dbcp需要使用pool)、mysql-connector-java-5.1.45-bin.jar
+
+
+	1.2 DAO层实现类要继承抽象类JdbcDaoSupport，才能使用getJdbcTemplate()方法
+	public class StudentDaoImpl extends JdbcDaoSupport implements IStudentDao
+
+	
+	数据源：
+	1.3.1 Spring默认的数据源DriverManagerDataSource:
+	<bean id="myDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+		<property name="url" value="jdbc:mysql://127.0.0.1:3366/test"/>
+		<property name="username" value="root"/>
+		<property name="password" value="252513"/>
+	</bean>
+	
+	1.3.2 DBCP数据源BasicDataSource:
+	 <bean id="myDataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+		<property name="url" value="jdbc:mysql://127.0.0.1:3366/test"/>
+		<property name="username" value="root"/>
+		<property name="password" value="252513"/>
+	</bean> 
+
+	1.3.3 C3P0数据源ComboPooledDataSource:
+	<bean id="myDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="com.mysql.jdbc.Driver"/>
+		<property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3366/test"/>
+		<property name="user" value="root"/>
+		<property name="password" value="252513"/>
+	</bean>
+
+	当然我们的连接数据库的四大属性一般放在properties文件中：
+	<!--注册数据源：C3P0的连接池(使用属性文件)  -->
+	<bean id="myDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driver}"/>
+		<property name="jdbcUrl" value="${jdbc.url}"/>
+		<property name="user" value="${jdbc.user}"/>
+		<property name="password" value="${jdbc.password}"/>
+	</bean>
+
+	<!--注册属性文件：方式一  -->
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">  // 类名复杂，难记使用方式二
+		<property name="location" value="classpath:jdbc.properties"></property>
+	</bean>
+
+	<!--注册属性文件：方式二(使用context标签，所有要约束)  -->
+	<context:property-placeholder location="classpath:jdbc.properties"/>
+
+	一系列crud操作详见 09-jdbcTemplate
+
+	在配置文件中模板对象可以不进行注册：
+	<!--注册Dao  -->
+	<bean id="studentDao" class="com.bjpowernode.dao.StudentDaoImpl">
+		<property name="dataSource" ref="myDataSource"></property>  // 底层中如果没有JdbcTemplate,会自行创建JdbcTemplate
+	</bean>
+
+
+	关于this.getJdbcTemplate();JdbcTemplate对象是多例的，系统会为每一个使用模板对象的线程创建一个JdbcTemoplate实例，并且在该线程结束时，自动释放JdbcTemplate实例。
+	所以在每次使用JdbcTemplate对象时，都需要通过getJdbcTemplate()方法获取
+
+
+
+	2，Spring的事务管理：AOP的应用
+
+	2.1 事务管理器接口：PlatformTransactionManager  用于事务的提交与回滚。Spring默认回滚方式是：发生运行时异常回滚，受查时异常(编译时异常)提交。
+	    PlatformTransactionManager有两个实现类：
+	    1, DataSourceTransactionManager：使用JDBC或iBatis(MyBatis)进行数据持久化时使用
+	    2,HibernateTransactionManager：使用Hibernate进行数据持久化时使用
+
+        2.2 事务定义接口：TransactionDefinition  是关于隔离级别以及事务的传播行为的。MySQL默认的隔离级别是可重复读(4级)，Oracle默认的隔离级别是读已提交(2级)。
+			   事务的传播行为：类似于A()方法在A事务下运行，B()方法在B事务下运行，如果A()方法调用B()方法，那么B()方法在哪个事务下运行的问题。
+			   事务的传播行为默认的是： PROPAGATION_REQUIRED 
+
+
+	3，Spring事务管理例子（账户与股票之间的关系 详见10-buyStock）
+	本例中需要将事务提升到service层，故使用AOP将事务织入到service层。
+	需要增加aop jar包以及AOP联盟的jar包
+	
+	3.1 使用Spring的事务代理工厂管理事务：
+	<!--注册事务管理器  -->
+	<bean id="myTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="myDataSource"/>
+	</bean>
+	
+	<!--生成事务代理对象  -->
+	<bean id="serviceProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="myTransactionManager"/>
+		<property name="target" ref="buyStockService"/>
+		<property name="transactionAttributes">
+			<props>
+				<prop key="open*">ISOLATION_DEFAULT,PROPAGATION_REQUIRED</prop><!--key的值是方法名  -->
+				<!--
+					-异常表示发生指定异常后回滚，这里的异常是受查异常
+					+异常发生自动异常后提交，这里的异常通常是运行时异常
+				  -->
+				<prop key="buyStock">ISOLATION_DEFAULT,PROPAGATION_REQUIRED,-BuyStockException</prop>
+			</props>
+		</property>
+	</bean>
+
+	3.2 使用Spring的事务注解管理事务：	需要增加tx约束文件   
+		
+	<!--注册事务管理器 -->
+	<bean id="myTransactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="myDataSource" />
+	</bean>
+
+	<!--注册事务注解驱动 -->   详见 12-buyStock-annotation
+	<tx:annotation-driven transaction-manager="myTransactionManager"/>
+	
+	3.3 使用AspectJ的AOP配置管理事务(重点，以后基本上使用的是这个)：
+		在上面的基础上增加两个jar包：aspectj的核心jar包aspectjweaver-1.6.8.jar、整合jar包spring-aspects-4.3.2.RELEASE.jar
+
+		<!--注册事务管理器 -->
+	<bean id="myTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="myDataSource" />
+	</bean>
+	
+	<!--注册事务通知  -->
+	<tx:advice id="txAdvice" transaction-manager="myTransactionManager">
+		<tx:attributes>
+			<!--这里指定的是：为每一个连接点指定所要应用的事务属性，如果下面的切入点没有指定到，也不会起作用的  -->
+			<tx:method name="open*" isolation="DEFAULT" propagation="REQUIRED"/>
+			<tx:method name="buyStock" isolation="DEFAULT" propagation="REQUIRED" rollback-for="BuyStockException"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!--AOP配置 -->
+	<aop:config>
+		<!--这里指定的是切入点  -->
+		<aop:pointcut expression="execution(* *..service.*.*(..))" id="myPointcut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="myPointcut"/>
+	</aop:config>
+
+
+12，Spring与MyBatis的整合：
+	环境的搭建：所使用的jar包在 E:\Tools\Spring -> Spring-MyBatis整合jar包文件件里
+	
+	1，mapper的动态代理方式：这种方式的问题是当有多个dao时，要生成多个Dao的代理对象   详见14-spring-mybatis
+	<bean id="mySqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="classpath:mybatis.xml" />
+		<property name="dataSource" ref="myDataSource" /> <!--为mybatis.xml文件配数据源  -->
+	</bean>
+	
+	<!--生成Dao的代理对象 -->
+	<bean id="studentDao" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="sqlSessionFactory" ref="mySqlSessionFactory" />
+		<property name="mapperInterface" value="com.bjpowernode.dao.IStudentDao" /> <!--要代理的Dao接口  -->
+	</bean>
+	
+	<!--注册Service  -->
+	<bean id="studentService" class="com.bjpowernode.service.StudentServiceImpl">
+		<property name="dao" ref="studentDao"></property>
+	</bean>
+	
+
+	2，支持扫描的Mapper动态代理（重点）：解决mapper的动态代理方式的问题
+
+	<!--生成Dao的代理对象
+		当前配置会为指定的基本包中所有的接口生成代理对象
+	 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="mySqlSessionFactory" />
+		<property name="basePackage" value="com.bjpowernode.dao" /> <!--指定基本包  -->
+	</bean>
+	
+	<!--注册Service  -->
+	<bean id="studentService" class="com.bjpowernode.service.StudentServiceImpl">
+		<property name="dao" ref="IStudentDao" /> <!--接口的简单类名  -->
+	</bean>
+
+	一个奇怪的现象：
+	<!--注册Service  -->
+	<bean id="studentService" class="com.bjpowernode.service.StudentServiceImpl">
+		<!--这里的Dao的注入需要使用ref属性，若Dao的接口名前两个字母是大写，则这里的值是接口的简答类名。
+			若Dao的接口名的首字母是大写，第二个字母是小写，则这里的值为简单类名，但首字母要小写。  -->
+		<property name="dao" ref="studentDao" /> <!--接口的简单类名  -->
+	</bean>
+
+
+13,Spring与web:
+	在ServletContextListener实现类的contextInitialized()方法中创建Spring容器对象，Spring框架已经为我们写好了这个实现类，即ContextLoaderListener。
+	我们需要导入一个jar包：spring-web-4.3.2.RELEASE.jar。
+
+	在web.xml文件中注册监听器：
+	<!--注册ServletContext监听器,完成两件工作：
+  		1)在ServletContext被创建时，创建Spring容器对象
+  		2)将创建好的Spring容器对象放入到ServletContext的域属性空间
+	 -->
+	<listener>
+  		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+       注意：使用此种方法applicationContext.xml文件的默认要放在WEB-INF文件夹下面，并且名字必须叫applicationContext。 详见18-spring-web-2
+
+       如果想改名，并且放在类路径下，可以在web.xml文件中设置如下：
+       <context-param>
+  	 <param-name>contextConfigLocation</param-name>
+  	 <param-value>classpath:spring.xml</param-value>   // spring.xml名字可以随便起。
+       </context-param>
+
+       另外一种获取ApplicationContext的方法  详见：19-spring-web-3
+       WebApplicationContext ac = WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext());
+
+
+
+
+
+	
+
+
+
+
+

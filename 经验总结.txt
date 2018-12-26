@@ -1,0 +1,1 @@
+1，在Thymeleaf用${}获取值时，像th:text="${info.state.description}"这种有多级获取值时，要加th:if判断，如果为null会报错。

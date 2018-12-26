@@ -1,0 +1,39 @@
+1，在BootStrap的modal中使用Select2搜索框无法输入：
+	去掉tabindex=”-1”属性可解决。
+	例如：
+	<div class="modal fade" id="checkedState" data-id="" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+
+
+2，在bootstrap中用thymeleaf绑定(data)数据：
+	<tr th:each="info:${antistopLists}" th:attr="data-id=${info.id},data-parameter=${info.parameter},data-type=${info.disposeType}">
+
+
+3，与modal中数据的一种匹配方式：使用show.bs.modal
+	$("#editModal").on('show.bs.modal',function (event) {
+            var button = $(event.relatedTarget);
+            var type = button.data('whatever');
+            var label = $(".col-sm-6 > label");
+            if(!type){
+                $.each(label,function () {
+                    var checked = $(this).find("[name='platformType']").val();
+                    if('APP'==checked){
+                        $(this).find("[name='platformType']").prop("checked",true);
+                    }
+                });
+            }else {
+                $.each(label,function () {
+                    var checked = $(this).find("[name='platformType']").val();
+                    if(type==checked){
+                        $(this).find("[name='platformType']").prop("checked",true);
+                    }
+                });
+            }
+
+        });
+
+	show.bs.modal	show 方法调用之后立即触发该事件。如果是通过点击某个作为触发器的元素，则此元素可以通过事件的 relatedTarget 属性进行访问。
+	shown.bs.modal	此事件在模态框已经显示出来（并且同时在 CSS 过渡效果完成）之后被触发。如果是通过点击某个作为触发器的元素，则此元素可以通过事件的 relatedTarget 属性进行访问。
+	hide.bs.modal	hide 方法调用之后立即触发该事件。
+	hidden.bs.modal	此事件在模态框被隐藏（并且同时在 CSS 过渡效果完成）之后被触发。
+	loaded.bs.modal	从远端的数据源加载完数据之后触发该事件。
+	

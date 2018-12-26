@@ -1,0 +1,104 @@
+1，<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+   standalone：文档定义是否独立使用  standalone="no"  默认是no即和别的文件有关系的使用。在实际中不怎么使用
+
+2，每个XML文档有且只有一个根元素。根元素：是一个完全包括文档中其他所有元素的元素，类似于html中的<html></html>标签。
+
+3，xml元素遵循以下规范：
+(1)区分大小写，例如：<P>和<p>是两个不同的标记。
+(2)不能以数字或者_(下划线)开头
+(3)不能以xml(或XML、或Xml等)开头
+(4)不能包含空格
+(5)名称中间不能包含冒号 (:)。
+
+4，xml属性需要注意的地方
+属性可以用单引号或者双引号括起来。如果属性值有单引号和双引号，可以用实体引号代替。单引号的实体是:&apos;  双引号的实体是：&quot;  <stu stuNo="a&apos;0&quot;1">
+
+常用的实体符号：
+&lt;	<
+&gt;	>
+&amp;	&
+&apos;	'
+&quot;	"
+
+不要在同一个标签中出现相同的属性名。
+
+注释：<!---->
+
+
+5,CDATA：当xml中的某个标签的内容包含特殊字符，可以使用CDATA。
+<介绍><![CDATA[#$%^<>da@!]]></介绍>
+语法：<![CDATA[内容...]]>   CDATA不能用小写cdata。
+	
+	CDATA相关面试题：请问如何使用xml文件来传递、保存一个图片? 使用<![CDATA[]]>节来保存。
+
+
+6，处理指令PI(processing instruction)(了解)：xml也可以像html一样引入css文件，PI指的就是如何引入外部css文件。
+	PI指令：<?xml-stylesheet href="classes.css" type="text/css"?>
+	
+	但是xml一般是三种用途：
+	(1)作为程序间的通讯标准(ajax,text,xml,json)
+	(2)作为配置文件(用的很多)
+	(3)小型数据库
+
+
+7，DTD(document type definition)文档类型定义：DTD的主要用处是约束xml文件，也可以约束html、xhtml文件。
+	常用的约束技术：DTD、Schema
+	对于DTD只要求看懂，可以根据别人提供的dtd文件，写出对应的xml文件即可。
+
+	引入dtd文件语法：<!DOCTYPE 根元素名 SYSTEM "dtd的路径"> SYSTEM表示的是引入本地的dtd文件。
+	如果dtd文件在当前路径的另外一个文件夹，应该这样表示：例如：<!DOCTYPE 根元素名 SYSTEM "./kk/dtd的路径">  .表示的是当前路径,kk是文件夹名
+	在默认情况下，浏览器是不会去检测，需要我们自己写代码测试。写一个html文件检测是否合法。(详细见"checkDtd.html"文件)
+
+	内部DTD文档：<!DOCTYPE 根元素 [定义内容]>
+	外部DTD文档：<!DOCTYPE 根元素 SYSTEM "DTD文件路径">
+	内外部DTD文档：<!DOCTYPE 根元素 SYSTEM "DTD文件路径" [定义内容]>
+
+	当引用的文件是一个公共(放在公网上的)的文件时，采用如下方式：
+	<!DOCTYPE 文档根节点 PUBLIC "DTD名称" "DTD文件的URL">
+
+	dtd元素说明：
+	基本语法
+	<!ELEMENT 元素名 内容> 其中内容有三种规范
+	(1)EMPTY	该元素不能包含子元素和文本，但可以有属性 (大概意思就是：不能有子元素，不能有文本，可以有属性)
+	(2)ANY		该元素可以包含任何在DTD中定义的元素内容  (大概意思就是：可以有子元素，但是该子元素必须是定义过的。可以有文本)
+	(3)#PCDATA	可以包含任何字符数据，但是不能在其中包含任何子元素其他类型 (大概意思就是：不能有子元素，可以有文本，可以有属性)
+	+ * ? 代表的个数与正则表达式表示的一样。
+	,号表示元素出现的顺序。
+	| 表示可选择的。
+	
+	例如：
+	<!ELEMENT 班级 (学生+,班长?)>
+	<!ELEMENT 学生 (名字,年龄,介绍)>
+	<!ELEMENT 名字 (#PCDATA)>
+	<!ELEMENT 年龄 (#PCDATA)>
+	<!ELEMENT 介绍 (#PCDATA)>
+
+	DTD属性定义语法：(详细见“classes03.xml”)
+	<!ATTLIST 元素名称
+	属性名称  类型  属性特点
+	属性名称  类型  属性特点......
+	>
+	属性类型有：
+	CDATA		表示属性值可以是字符或者数字
+	ID		属性值是唯一的,并且以字母开头
+	IDREF/IDREFS	id引用/多个id引用	
+	Enumerated	枚举
+	ENTITY/ENTITIES	实体
+
+	属性的特点有：
+	#REQUIRED	该属性必须有
+	#IMPLIED	该属性可以有也可以没有
+	#FIXED value	该属性的值是固定值	格式：国籍 CDATA #FIXED "中国"   注意：下面可以不写该属性，但是写出来的话，属性值必须是"中国"
+	DEFAULT value	默认值(用的少)	例如：婚姻状态 (单身|结婚|离婚) "结婚"
+
+
+	ENTITY/ENTITIES	实体：实体用于为一段内容创建一个别名，以后在XML文档中就可以使用别名引用这段内容了。
+	实体分为两种：引用实体、参数实体
+	引用实体：在dtd文件中定义，XML文件中使用。格式：dtd文件中这样写<!ENTITY 实体名 "内容">，xml文件中这样引用：&实体名; 内、外部dtd文件都可以这么用。
+	参数实体：在dtd文件中定义，dtd文件中使用。格式：<!ENTITY % 实体名称 "实体内容">,dtd文件这样引用：%实体名称;
+
+	crud(增删改查)
+
+
+8,XPath(XML Path Language)：是一种标示节点位置的语言，可以用来描述XML元素的位置。
+	

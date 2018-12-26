@@ -1,0 +1,254 @@
+1，一个简单的使用sprngdata的例子：
+	写一个接口：
+	/**
+	 * 1,Repository是一个空接口，即是一个标记接口。
+	 * 2，若我们定义的接口继承了Repository，则该接口会被IOC容器识别为一个Repository Bean，
+	 *    纳入到IOC容器中，进而可以在该接口中定义一定规范的方法。
+	 * 3，实际上，也可以通过@RepositoryDefinition注解替代继承Repository接口
+	 * 4,要注意的是：条件属性以首字母大写。
+	 * 5，支持属性的级联查询(多表关联查询),若当前类有符合条件的属性，则优先使用，而不使用级联属性。
+	 *    若使用级联属性，属性之间使用“_”进行连接。
+	 */
+	 @RepositoryDefinition(domainClass=Person.class,idClass=Integer.class)
+	public interface PersonRepository /*extends Repository<Person, Integer>*/ {
+	
+		//根据laastName来获取对应的Person
+		Person getByLastName(String lastName);
+			
+	}
+
+	测试方法：
+	@Test
+	public void testHelloWorldSpringData() {
+		PersonRepository personRepository = ctx.getBean(PersonRepository.class);
+		Person person = personRepository.getByLastName("AA");
+		System.out.println(person);
+	}
+
+
+2,springdata方法定义规范：
+	按照SpringData规范，查询方法以find | read | get开头，
+	涉及条件查询时，条件的属性用条件关键字连接，要注意的是：条件属性以首字母大写。
+	例如：定义一个Entity实体类
+	class User{
+	    private String firstName;
+	    private String lastName;
+	}
+	使用And条件连接时，应该这样写：
+	   findByLastNameAndFirstName(String lastName,String firstName);
+	   条件的属性名称与个数要与参数的位置与个数一一对应。
+
+	使用方法名进行查询无法查询子查询，我们要使用到@Query注解来解决这个问题：
+	 @Query("SELECT p FROM Person p WHERE p.id = (SELECT max(p2.id) FROM Person p2)")
+	 Person getMaxIdPerson();
+
+	@Query传递参数的方式：
+	//使用@Query传递参数的方式：使用占位符
+	@Query("select p from Person p where p.lastName = ?1 and p.email = ?2")
+	List<Person> testQueryAnnotationParams1(String lastName,String email);
+	
+	//使用@Query传递参数的方式：命名参数的方式(参数顺序可以随便)
+	@Query("select p from Person p where p.lastName = :lastName and p.email = :email")
+	List<Person> testQueryAnnotationParams2(@Param("email") String email,@Param("lastName")String lastName);
+	
+	所传的参数带%：
+	@Query("select p from Person p where p.lastName like ?1 or p.email like ?2")
+	List<Person> testQueryAnnotationLikeParam(String lastName,String email);
+	@Test
+	public void testQueryAnnotationLikeParam() {
+		List<Person> persons = personRepository.testQueryAnnotationLikeParam("%A%", "%bb%");
+		System.out.println(persons);
+	}
+
+	所传的参数不带%：
+	@Query("select p from Person p where p.lastName like %?1% or p.email like %?2%")
+	List<Person> testQueryAnnotationLikeParam1(String lastName,String email);
+	@Test
+	public void testQueryAnnotationLikeParam() {
+		List<Person> persons = personRepository.testQueryAnnotationLikeParam1("a", "bb");
+		System.out.println(persons);
+	}
+
+	//命名参数上也可以添加%%：
+	@Query("select p from Person p where p.lastName like %:lastName% or p.email like %:email%")
+	List<Person> testQueryAnnotationLikeParam2(@Param("email") String email,@Param("lastName")String lastName);
+
+	//设置nativeQuery=true可以使用原生的sql查询
+	@Query(value="select count(id) from jpa_persons",nativeQuery=true)
+	Long getTotalCount();
+
+3，@modifying 注解：
+	//可以通过自定义的JPQL完成update和delete操作，注意：jpql不支持使用insert操作
+	//在 @Query 注解中编写JPQL语句，必须使用 @Modifying进行修饰，以通知SpringData这是一个update或delete操作。
+	//update或delete操作需要使用事务，此时需要定义Service层，在Service层的方法上添加事务操作。
+	//默认情况下，springdata的每个方法上有事务，但都是一个只读事务，他们不能完成修改操作，所以查询不需要再添加事务。
+	@Modifying
+	@Query("update Person p set p.email = :email where id = :id")
+	void updatePersonEmail(@Param("id") Integer id,@Param("email") String email);
+
+	使用 @Modifying 要使用事务注解，不过事务我们一般用在service层，所以我们再写一个service层。
+
+	service层：
+	@Service
+	public class PersonService {
+		@Autowired
+		private PersonRepository personRepository;
+		
+		@Transactional
+		public void updatePersonEmail(String email,Integer id) {
+			personRepository.updatePersonEmail(id, email);
+			
+		}
+	}
+
+	测试类：
+	private ApplicationContext ctx = null;
+	private PersonService personService;
+	{	
+		ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+		personService = ctx.getBean(PersonService.class);
+	}
+	
+	@Test
+	public void testModifying() {
+		personService.updatePersonEmail("bb@atguigu", 1);
+	}
+
+
+4，Repository接口的子接口的方法：
+	1，Iterable<S> save(Iterable<S> entities);批量添加方法
+	//批量添加
+	@Test
+	public void testCrudRepository() {
+		List<Person> persons = new ArrayList<>();
+		for(int i = 'a';i<'z';i++) {
+			Person person = new Person();
+			person.setAddressId(i + 1);
+			person.setBirth(new Date());
+			person.setEmail((char)i + "" + (char)i + "@atguigu.com");
+			person.setLastName((char)i + "" + (char)i);
+			
+			persons.add(person);
+		}
+		personService.savePersons(persons);
+	}
+
+	@Transactional
+	public void savePersons(List<Person> persons) {
+		personRepository.save(persons);
+	}
+
+	2，PagingAndSortingRepository接口：
+	@Test
+	public void testPagingAndSortingRepository() {
+		int pageNo = 3;  //这是第四页
+		int pageSize = 5;
+		
+		//Sort封装了排序的信息
+		//Order是具体针对某一个属性进行升序还是降序
+		Order order1 = new Order(Direction.DESC, "id"); //按id降序
+		Order order2 = new Order(Direction.ASC, "email");
+		Sort sort = new Sort(order1,order2);
+		
+		//Pageable接口通常使用的是其PageRequest实现类，其中封装了需要分页的信息。
+		PageRequest pageable = new PageRequest(pageNo, pageSize,sort);
+		Page<Person> page = personRepository.findAll(pageable);
+		
+		System.out.println("总记录数：" + page.getTotalElements());
+		System.out.println("当前第几页：" + (page.getNumber()+1));
+		System.out.println("总页数：" + page.getTotalPages());
+		System.out.println("当前页面的List：" + page.getContent());
+		System.out.println("当前页面的记录数：" + page.getNumberOfElements());
+	}
+
+
+	3，JpaRepository接口：
+	@Test
+	public void testJpaRepository() {
+		Person person = new Person();
+		person.setBirth(new Date());
+		person.setEmail("XYy@atguigu.com");
+		person.setLastName("xyz");
+		person.setId(27); //如果id相同会修改
+		
+		//插入
+		Person person2 = personRepository.saveAndFlush(person);
+		System.out.println(person==person2); //false
+	}
+
+	
+	4，JpaSpecificationExecutor接口（该接口不属于Repository接口体系，换句话说不是Repository的子类）：解决带查询条件的分页
+
+	/**
+	 * 实现带查询条件的分页，id > 5
+	 * 调用JpaSpecificationExecutor的Page<T> findAll(Specification<T> spec,Pageable pageable)方法。
+	 * 参数Specification分装类JPA的Criteria查询的查询条件
+	 * Pageable封装了请求分页的信息，例如：pageNo，pageSize,Sort
+	 */
+	@Test
+	public void testJpaSpecificationExecutor() {
+		int pageNo = 3 -1;
+		int pageSize = 5;
+		PageRequest pageble = new PageRequest(pageNo, pageSize);
+		
+		//通常使用Specification的匿名内部类
+		Specification<Person> specification = new Specification<Person>() {
+			/**
+			 * @param root：代表查询的实体类
+			 * @param query：可以从中得到Root对象，即告诉JPA Criteria查询要查询哪个实体类，还可以来添加查询条件，
+			 * 				 还可以结合EntityManager对象得到最终查询的TypedQuery对象。
+			 * @param cb：Criteria对象，用于创建Criteria相关对象的工厂，当然可以从中获取到Predicate对象。
+			 * @return：Predicate类型，代表一个查询条件
+			 */
+			@Override
+			public Predicate toPredicate(Root<Person> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+				Path path = root.get("id");
+				Predicate predicate = cb.gt(path, 5); //id > 5
+				return predicate;
+			}
+			
+		};
+		
+		Page<Person> page = personRepository.findAll(specification, pageble);
+		System.out.println("总记录数：" + page.getTotalElements());
+		System.out.println("当前第几页：" + (page.getNumber()+1));
+		System.out.println("总页数：" + page.getTotalPages());
+		System.out.println("当前页面的List：" + page.getContent());
+		System.out.println("当前页面的记录数：" + page.getNumberOfElements());
+	}
+
+
+5,自定义Repository方法：
+	步骤：
+	1，写一个接口:
+	public interface PersonDao {
+	
+		void test();
+	}
+
+	2,自定义的Repository继承上面的接口：
+	public interface PersonRepository extends JpaRepository<Person, Integer>,JpaSpecificationExecutor<Person> ,PersonDao{
+
+	}
+
+	3，在写一个PersonDao接口的实现类：注意该类的名字必须是自定义的Repository名字后面加上Iml,如下：
+	
+	public class PersonRepositoryImpl implements PersonDao {
+	@PersistenceContext
+	private EntityManager entityManager;
+	
+	@Override
+	public void test() {
+		Person person = entityManager.find(Person.class, 11);
+		System.out.println("---->" + person);
+		}
+
+	}
+
+	4,测试：
+	@Test
+	public void testCustomRepositoryMethod() {
+		personRepository.test();
+	}
+
+	实际上在使用PersonRepository的test()方法时，会调用PersonRepositoryImpl中test方法的实现。

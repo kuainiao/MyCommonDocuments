@@ -1,0 +1,133 @@
+1，环境搭建：引入下面5个文件
+  <script type="text/javascript" src="../js/jQueryEasyUI/jquery-1.7.2.min.js"></script>
+  <script type="text/javascript" src="../js/jQueryEasyUI/jquery.easyui.min.js"></script>
+  <link rel="stylesheet" href="../js/jQueryEasyUI/themes/default/easyui.css" type="text/css"></link>
+  <link rel="stylesheet" href="../js/jQueryEasyUI/themes/icon.css" type="text/css"></link>
+  <script type="text/javascript" src="../js/jQueryEasyUI/locale/easyui-lang-zh_CN.js"></script>
+
+2，在FireFox的Debug的控制台中显示：
+	$(function(){
+  		console.info($("#dd"));
+  	});
+	
+3,easyloader的使用：
+	$(function(){
+  	easyloader.load('dialog',function(){
+  		$("#dd").dialog({
+  		modal : true
+  		});
+  	});
+  		
+  	});
+	
+	$(function(){
+  		easyloader.load(['dialog','messager'],function(){
+  			$("#dd").dialog({
+  			modal : true  //modal : true表示不能选中背景，背景变灰色
+  			});
+  			$.messager.alert('Title','load ok');
+  		});
+  		
+  	});
+	
+	//下面的代码与上面的功能一样(只引入jquery-1.7.2.min.js,easyloader.js文件即可)
+	<body>
+  	<div  modal="true" class="easyui-dialog" id="dd" title="My Dialog" style="width:400px;height:200px;">Dialog Content.</div>	
+	</body>
+
+4,panel的属性及方法：
+	closed="true" 隐藏
+	<body>
+  	<div id="p" class="easyui-panel" title="My Panel" style="width:500px;height:150px;padding:10px;background:#fafafa;"
+  	iconCls=icon-save closable="true" closed="true" 
+  	collapsible="true" minizable="true" maximizable=true>
+  	<p>panel content.</p>
+  	<p>panel content.</p>
+  	</div>	
+  	<input type="button" value="显示" onclick="$('#p').panel('open')">
+  	<input type="button" value="关闭" onclick="$('#p').panel('close')">
+  	<input type="button" value="销毁" onclick="$('#p').panel('destroy')">
+
+
+5,使用表单序列化：
+$.ajax({
+	url:'test/login.do',
+	/* data : {
+		name : $('#loginInputForm input[name=name]').val(),
+		password : $('#loginInputForm input[name=password]').val()
+	} */
+
+	//使用表单序列化，比上面的方式要简单。
+	data : $("#loginInputForm").serialize(),
+
+6，一些方法：
+	$.messager.alert("提示信息","登录失败!"); //弹出一个提示框
+
+	//data = eval("(" + data + ")"); //这两个方法效果一样
+	data = $.parseJSON(data); //将json格式的字符串返回成json对象
+
+7,ValidateBox:
+	还可以直接写一个验证，格式如下：
+	$.extend($.fn.validatebox.defaults.rules, {  //固定格式
+		equals: {  //名字随意,等于你 validType的值
+			validator: function(value,param){  //固定格式，param的格式是这样的 validType="equals['#loginInputForm input[name=password]]']" 
+												 //#loginInputForm input[name=password]] 这是一个选择器
+			return value == $(param[0]).val(); //返回false，就会执行下面的message的内容
+			},
+			message: 'Field do not match.' //message是固定的，后面的内容随意
+		}
+	});
+
+8,layout：
+	属性herf：如果是html页面加载的是body里的内容，所以不必要写html的那些标签，直接在页面里写内容即可。
+	
+	
+9,注意的问题：
+	在使用了mybatis框架后，需要进行排序功能时，在mapper.xml文件中编写sql语句时，注意orderBy后的变量要使用${},而不用#{}。
+	{}变量是经过预编译的，${}没有经过预编译。
+
+
+				toolbar : [{
+				text : '增加',
+				iconCls : 'icon-add',
+				handler : function(){
+				}
+			},{
+				text : '删除',
+				iconCls : 'icon-remove',
+				handler : function(){
+				}
+			},{
+				text : '修改',
+				iconCls : 'icon-edit',
+				handler : function(){
+				}
+			},{
+				text : '查询',
+				iconCls : 'icon-search',
+				handler : function(){
+				}
+			}]
+
+10，使用easyui的validatebox自定义验证器
+	$(function(){
+	//自定义一个验证器
+	$.extend($.fn.validatebox.defaults.rules,{
+		minLength : {
+			validator : function(value,param){ 
+				alert(value + "|" +  param);
+				return value.length >= param; //value是输入的值,param是下面validType:'minLength[5]'中的5
+			},
+			message : '请输入不小于{0}的字符', //验证不通过就执行这里
+		},
+	});
+	
+	$('#email').validatebox({
+		required:true,
+		validType:'minLength[5]',
+
+	});
+
+
+11，JSON.stringify()
+	方法用于将 JavaScript 值转换为 JSON 字符串。要转换的 JavaScript 值（通常为对象或数组）

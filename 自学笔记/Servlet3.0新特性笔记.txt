@@ -1,0 +1,67 @@
+1，Servlet3.0规范是JavaEE6.0规范中的子规范。其要求运行环境最低是JDK6.0，
+   Tomcat7.0。
+
+   Servlet3.0与Servlet2.5的区别：WebContent -> WEB-INF下没有了web.xml文件。
+   没有了web.xml文件，Listener、Serlvet、Filter如何注册？ 可以通过注解
+
+   @WebServlet(/some") <=> @WebServlet(value="/some") ,没有写属性名，默认是value属性。
+   其实真正的样子是这样：@WebServlet(value= {"/some"})，value属性底层是个数组，当值只有一个的时候，“{}”，可以省略不写。
+
+   @WebServlet(urlPatterns= {"/some","/xxx","/jjj"})  value也可以改成urlPatterns,属性value与urlPatterns功能相同，只能使用一个，不能同时使用。
+   value属性可以省略不写，urlPattern属性不能省略。
+
+
+2,Servlet的注解：
+	@WebServlet(urlPatterns= {"/some","/xxx","/jjj"},				//属性value与urlPatterns功能相同，只能使用一个，不能同时使用。
+		name = "Some-Servlet", 							//设置ServletName
+		initParams= {@WebInitParam(name="company",value="北京动力节点"),	//设置初始化参数
+		            @WebInitParam(name="teacher",value="Reyco")
+		},
+		loadOnStartup=2								//应用启动时创建当前Servlet实例，默认是-1(不被创建)
+		)  
+
+
+
+3,Filter的注解
+	@WebFilter("/*")
+	@WebFilter(servletNames="Some-Servlet")  //拦截<servlet-name>Some-Servlet</servlet-name>
+	@WebFilter(value="/*",dispatcherTypes=DispatcherType.FORWARD)  ,虽然这里有“/*”，但是只拦截dispatcherTypes=DispatcherType.FORWARD
+
+
+4,Listener的注解
+	注册Listener: @WebListener
+
+5,Servlet3.0当这么注册 @WebServlet("/someServlet") 时，又在web.xml文件中注册Servlet，例如:<url-pattern>/xxx</url-pattern>,其结果相当于有多个<url-pattern></url-pattern> 。
+		        在地址栏中输入"/someServlet"和"/xxx"这两个都可以访问到Servlet。但是这两个注册名字不能相同。
+
+
+6，<!-- 注册Filter
+	若对于Filter采用了两种方式进行注册，则需要注意：
+	无论url-pattern的值是否相同，其都是作为两个独立的Filter出现的
+   -->
+
+
+7，<!--注册Listener 
+	若对于Listener采用了两种方式进行注册，其仅仅是相当于一个Listener
+   -->
+
+8，version="3.0" metadata-complete="false">
+      <!--<web-app/>中的属性metata-complete的值若为true,则表示对三大组件的注册方式，只有web.xml中的注册起作用，将忽略注解的注册。
+      若为false，则表示两种注册方式同时起作用
+      -->
+
+9， 对于异步上下文对象的结束方式总结：
+ * 1，在异步子线程使用异步上下文对象ac.complete()方法：该方法用于结束异步操作，并将于当前异步对象相关的request与response对象销毁。
+ * 2，在异步子线程中使用ac.dispatch()方法：该方法在结束异步操作的同时，会将参数所指定的页面内容包含到当前异步对象相关的表中输出流中。
+ * 	 其执行效果相当于RequestDispatcher对象的include()方法的执行效果。
+ * 3，在异步Servlet主线程中设置ac.setTimeout(timeout);的超时时限，当超时时限到达时，异步对象及其相关的request与response对象销毁。
+
+
+10，组件可插性：
+	创建一个 Web Fragment Project 工程
+	在src -> META-INF -> web.fragment.xml中该xml文件跟web.xml文件类似，也可以进行注册
+	可将该工程打包，例如jar包。可将该包配置到一个 Dynamic Web Project中使用
+
+
+11，三大组件的动态注册
+	动态注册只能在应用启动时进行，而不能在应用运行过程中进行注册

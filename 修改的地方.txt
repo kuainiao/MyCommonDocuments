@@ -1,0 +1,32 @@
+代码修改的地方：
+
+1，出入金账户详情页面(settlement/supplierAccountDetails)jquery代码。建议直接复制整个页面的代码。
+
+2，增加了ReconciliationsTradeStateEnum枚举类
+
+-----------------------2018-09-18-------------------------------
+1，清算明细方法，清算明细页面，增加了model.addAttribute("id",id);
+
+
+------------------------2018-09-20--------------------------------
+1，BankClearingDServiceImpl整个页面代码
+
+2，复制liquidationDetail页面代码
+
+3，复制SettlementController页面代码
+
+
+
+------------------2018-09-20-------开发完成-----
+1，清算单明细
+
+
+
+
+
+
+-------------------疑惑点--------------------
+1，BankClearingDServiceImpl中pageAllBankClearingD()方法：
+	if (StringUtils.isNotEmpty(storeId)) {       ???????  storeId
+//           queryParams.and(Filter.eq("capitalRecord.store.id", storeId));
+//       }  

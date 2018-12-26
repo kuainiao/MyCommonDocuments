@@ -1,0 +1,276 @@
+1,redis的安装：
+	1，安装gcc：yum install gcc-c++
+	2,上传redis压缩包到linux
+	3，解压到当前目录：tar -zxvf redis-3.0.0.tar.gz
+	4，进入目录：cd redis-3.0.0
+	5，编译：make  出现make[1]: Leaving directory `/root/redis-3.0.0/src' 表示编译完毕。
+	6，安装：make PREFIX=/usr/local/redis install
+	7，进入刚刚解压生成的redis-3.0.0目录下找到redis.conf文件，复制该文件：cp redis.conf /usr/local/redis
+
+
+2，redis的启动：
+	1，前端启动方式：缺点：无法部署集群
+		1，进入redis的启动目录：/usr/local/redis 目录
+		2，./bin/redis-server  redis的端口号是：6379
+		3,clone session 再输入cd /usr/local/redis
+		4，./bin/redis-cli（这种写法默认链接端口号为6379），就可以链接上了。也可以这样链接：./bin/redis-cli -h 127.0.0.1 -p 6379
+		
+	2，后端启动：
+		1，修改配置文件，，进入配置文件vim redis.conf 找到daemonize no 修改为daemonize yes
+		2，./bin/redis-server ./redis.conf 加载配置文件启动
+		3，clone session，./bin/redis-cli 就可以链接了
+
+
+3，redis的关闭：
+	1，查询pid，使用kill -9 pid号 关闭   非正常关闭，不使用这种方式
+	2，在服务端执行命令：./bin/redis-cli shutdown  
+
+
+4,redis的数据类型：
+	key全部是字符串，value有5种数据类型。
+	value的5种类型：1，字符串。2，hash（与json很类似，对应java中的javaBean数据）。3，List集合（与java中的LinkedList相似(链表)）。
+			4，set集合（java中的Hashset）。5，有序的set集合。
+
+	key的名字是自定义的，key名不要过长，否则影响使用效率。因为先查找key名短的key，再查找key名长的。
+	key名也不要太短(太短不能见名知意)，最好是有意义的名字。
+
+
+5，redis命令：
+	1，String命令（重点）：字符串在redis中是二进制安全的(编码及解码只会发生再客户端)，意味着存入是什么数据，取出也是什么数据。在redis中字符串类型的value最多可以容纳的数据长度是512M。
+		二进制安全和数据安全没有关系，Mysql是二进制不安全的(乱码丢失数据)。
+
+	   常用命令：1，赋值(相当于map.put)：set key value，设定key持有指定的字符串value，如果该key存在则进行覆盖操作。总是返回“OK”
+			例如：set username zhangsan  key是usernamey，value是zhangsan。
+		     2，取值：get key  例如：get username 。如果key不存在，则返回“nil”，相当于null。
+
+		     3，删除：del key，例如：del username，返回值是integer类型，表示删除了几个。
+
+		     4，getset key value：先获取key的值，然后在设置该key值。例如：getset username wangwu
+
+		     5，incr key：将指定的key的value原子性的递增1，如果该key不存在，其初始值为0，在incr之后其值为1。如果value的值不能转成为整型，例如hello，该操作将执行失败并返回相应的
+				  错误信息。用于网站统计人数，计数器。
+				  
+		     6，decr key：与incr key 相反，如果该key不存在，其初始值为0，在incr之后其值为-1。
+
+		     7,append key value：拼接字符串。如果该key存在，则在原有的value后追加该值。如果key不存在，则重新创建一个key/value(key不存在相当于set key value)。
+
+		     8,incrby key increment：将指定的key的value原子性增加increment，如果该key不存在，其初始值为0，在incr之后其值为increment。
+		       如果value的值不能转成为整型，例如hello，该操作将执行失败并返回相应的错误信息。例如：incrby num1 10
+		     
+		     9，decrby key increment：与incrby key increment相反。例如decrby num1 10
+
+		     String使用环境：主要用于保存json格式字符串
+
+		删除所有的数据：flushdb
+
+	2，hash命令(了解)：hash中的key是不能设置过期时间的
+		常用命令：
+		 1，赋值：hset key field value：为指定的key设定field/value对(键值对)。例如:hset hash1 uname zhangsan
+			  hmset key field value [field2 value2...] 设置key中的多个field/value。例如：hmset hash2 uname zhangsan age 18 sex man
+
+	         2，取值：hget key field：返回指定的key中的field的值。hget hash1 uname。
+			  hmget key field1 field2 ...：获取key中的多个field的值。hmget hash2 uname age sex。
+			  hgetall key：获取key中的所有field-value，例如：hgetall hash2
+
+		 3，删除：hdel key field [field...]：例如，hdel hash1 uname。如果删除后里面没有了字段，则整个key/value也没有了。
+			 del key：删除整个的hash
+
+
+		 4，增加数字：hincrby key field increment：设置key中field的值增加increment，如：age增加20，例如：hincrby hash1 age 10
+
+		 5，hexists key field：判断某个字段是否存在。例如：hexists hash1 uname
+
+		 6，hlen key：获取key所包含的field的数量。例如 hlen hash1
+
+		 7，hkeys key：获得所有的字段。例如：hkeys hash1
+
+		 8，hvals key：获得所有的value。例如：hvals hash1
+
+
+	3，List命令(重点)：使用环境：1，做大数据集合的增删(链表增删快)。2，任务队列
+		常用命令：
+		1，赋值：lpush(从头部开始插入) key value...：例如；lpush list1 a b c d  最终结果为[d,c,b,a]
+			 rpush(从尾部开始插入) key value...：例如：rpush list1 a b c d  最终结果为[a,b,c,d]
+		2，取值：lrange key start end：获取链表中从start到end的元素的值，start、end从0开始计数;也可为负数，若为-1则表示链表尾部的元素，-2则表示倒数第二个，一次类推。
+			  例如：lrange list1 0 3   lrange list 0 -1(查询出所有的元素)
+
+
+		3，删除：lpop key：返回并弹出指定的key关联的链表中的第一个元素，即头部元素。如果该key不存在，返回nil；若key存在，则返回链表的头部元素。
+			 rpop key：从尾部弹出元素  当链表没有元素时，redis就会将该链表删掉。
+
+		4，llen key：返回指定的key关联的链表中的元素的数量。例如：llen list2
+
+		5，lrem key count value（效率低，不怎么使用，因为会给数据赋索引）：删除count个值为value的元素，如果count大于0，从头向尾遍历并删除count个值为value的元素，
+		   如果count小于0，则从尾向头遍历并删除。如果count等于0，则表示删除链表中所有等于value的元素。
+		   
+		6，lset key index value(效率低，因为会给数据赋索引)：设置链表中的index的脚标的元素值，0代表链表的头元素，-1代表链表的尾元素。操作链表的脚标不存在则抛异常。
+			例如：lset list1 2 aaa（把下标为2的元素替换为aaa，下标从0开始）
+
+		7，linsert key before | after pivot value(效率低，因为会给数据赋索引)：在pivot元素前或者后插入value这个元素。例如：linsert list1 before aaaa cccc
+
+		8，rpoplpush resource destination(重点，用于任务队列)：将链表中的尾部元素弹出并添加到头部。 例如rpoplpush list1 list2(list2不存在会自动创建list2)
+		   [循环操作] rpoplpush list1 list1
+
+
+	4，set命令（重点）：使用环境：涉及到两个大数据的交集、并集、差集
+		常用命令：
+		1，赋值：sadd key values[value1、value2...]：向set中添加数据，如果key的值已有则不会重复添加。例如：sadd set1 a b c d a 添加的只有4个，无序不可重复。
+
+		2，取值：smembers key：获取set中所有的成员。例如smembers set1
+			 sismember key member(常用)：判断参数中指定的成员是否在该set中，1表示存在，0表示不存在或者该key本身就不存在。例如：sismember set1 a
+
+		3，删除：srem key members[member1、member2...]：例如：srem set1 b d
+
+		4，差集运算(属于A集合，不属于B集合的数据)：sdiff key1 key2...：返回key1与key2中相差的成员，而且与key的顺序有关。即返回差集。
+			例如：sdiff set1 set2(属于set1不属于set2)。sdiff set2 set1(属于set2不属于set1)
+
+		5，交集运算：sinter key1 key2 key3...：例如sinter set1 set2  sinter set2 set1 这两个效果一样
+
+		6，并集运算：sunion key1 key2 key3...：例如 sunion set1 set2
+
+		7，scard key：获取set中成员的数量   例如：scard set1
+
+		8，srandmember key：随机返回set中的一个成员  例如：srandmember set1
+
+		9，sdiffstore destination key1 key2...：将key1、key2相差的成员存储在destination上  例如：sdiffstore set5 set1 set2
+
+		10，sinterstore destination key[key...]：将返回的交集存储在destination上。  例如：sinterstore set4 set1 set2
+
+		11，sunionstore destination key[key...]：将返回的并集存储在destination上。  例如：sunionstore set3 set1 set2
+
+
+	5,有序set命令(有序不重复)：使用环境：用来做排行榜 默认从小到大排序
+		常用命令：
+		1，赋值：zadd key score member score2 member2...：将所有以及该成员的分数存放到sorted-set中。如果该元素已经存在则会用新的分数替换原有的分数(不重复)。
+			 返回值是新加入到集合中的元素个数，不包含之前已经存在的元素。例如：zadd set1 5000 xiaoming 1000 xiaohong 500 xiaozhang
+		2，查看：zscore key member：返回指定成员的分数。例如：zscore set1 xiaoming
+			 zcard key：获取集合中的成员数量。例如：zcard set1
+		3，删除：zrem key member[member...]：移除集合中指定的成员，可以指定多个成员。例如：zrem set1 xiaozhang xiaohong
+
+		4，zrange key start end [withscores]：获取集合中脚标为start-end的成员，[withscore]参数表名返回的成员包含其分数。
+		   例如：zrange set1 0 -1(查询所有)  zrange set1 0 -1 withscores
+
+		5,zrevrange key start end [withscores]：从大刀小排序查询。例如：zrevrange set1 0 -1 withscores
+
+		6，zremrangebyrank key start stop：按照排名范围删除元素。 例如：zremrangebyrank set1 0 1(删掉排名前两名) 排名是按照从小到大排。
+
+		7，zremrangebyscore key min max：按照分数删除元素。 例如：zremrangebyscore set1 500 1500
+
+		8，zrangebyscore key min max [withscores] [limit offset count]：返回分数在[min,max]的成员并按照分数从低到高排序。[witjscores]显示分数;
+		   [limit offset count]：offset，表明从脚标为offset的元素开始并返回count个成员。
+		   例如：zrangebyscore set1 500 7500 withscores limit 0 2   limit 0 2表示从0开始查，但只查2个。
+
+		9,zincrby key increment member：设置指定成员的增加的分数。返回值是更改后的分数。例如：zincrby set1 100 xiaozhang
+
+		10，zcount key min max：获取分数在[min,max]之间的成员   例如：zcount set1 600 1000
+
+		11，zrank key member：返回成员在集合中的排名。索引（从小到大，从0开始） 例如：zrank set1 xiaozhang
+
+		12，zrevrank key member：返回成员在集合中的排名。索引（从大到小） 例如：zrevrank set1 xiaozhang
+
+	
+	6，通用命令：
+		1，keys pattern：获取所有与pattern匹配的key，返回所有与该key匹配的keys。*表示任意一个或多个字符，?表示任意一个字符。
+			例如：keys *（查询所有的key） keys ????(key名长度为4位)  keys *name*(key名包含name的)
+
+		2，del key1 key2...：删除指定的key   例如：del username name(删除两个key)
+
+		3，exists key：判断该key是否存在，1代表存在，0代表不存在。
+
+		4,rename key newkey：为当前的key重命名。 例如：rename name uname
+
+		5,type key：获取指定key的类型。该命令将以字符串的格式返回。返回的字符串为string、list、set、hash和zset，如果key不存在返回none。
+			例如：type username
+
+		6，expire key（默认key是永久生存的）：设置过期时间，单位为秒。 例如：expire zset1 30
+
+		7,ttl key：查看key可以还有多少寿命  例如：ttl zset1    返回-2表示key过期，不存在了。 -1表示key永久生存。
+
+6,jedis：
+	1，java单实例连接redis：Jedis jedis = new Jedis("192.168.189.128", 6379);
+	2，使用连接池：
+	/**
+	 * jedis的连接池
+	 */
+	@Test
+	public void run2(){
+		//1，设置连接池的配置对象
+		JedisPoolConfig config = new JedisPoolConfig();
+		config.setMaxTotal(50);//设置连接池中最大连接数，可选
+		config.setMaxIdle(10);//设置空闲时池中保有的最大连接数，可选
+		JedisPool pool = new JedisPool(config, "192.168.189.128", 6379);
+		//3，从池中获取连接对象
+		Jedis jedis = pool.getResource();
+		System.out.println(jedis.get("name"));
+		//4，连接归还池中
+		jedis.close();
+	}
+
+
+7,多数据库：
+	Redis默认16个数据库。0,1,2...15 共16个数据库   默认在0号数据库
+	切换数据库：select 数据库名   例如：select 1
+	把某个键值对进行数据库的移植：move username 1
+
+	清空当前数据库：flushdb
+	清空服务器的数据：flushall  清空所有数据库的数据
+
+
+8，redis的事务：目的为了进行redis语句的批量化执行
+	multi：开启事务用于标记事务的开始，其后执行的命令都将被存入命令队列，直到执行EXEC时，这些命令才会被原子的执行，类似于关系型数据库中的:begin transaction。
+	exec：提交事务，类似于关系型数据库中的：commit   执行批量化
+	discard：事务回滚，类似于关系型数据库中的：rollback  不执行批量化
+
+
+9，服务器命令：
+	ping：查看客户端是否和服务器端链接，返回pong表示已链接
+	echo：echo hehe 返回一个hehe
+	select：select 1 切换数据库
+	quit：退出客户端，与ctrl+c一样
+	dbsize：查看数据库有多少键值对
+	info：查看redis数据。
+
+
+
+10,持久化：把数据保存在硬盘上
+   Mysql持久化：任何增删改语句，都是在硬盘上做操作。
+   redis的增删改，数据都是在内存中进行操作的。
+
+   Redis的两种持久化操作：
+   1，RDB：是redis的默认持久化机制。RDB相当于照快照，保存的是一种状态。  dump.rdb就是RDB持久化的文件
+	优点：1，快照保存速度极快，还原数据速度极快。
+	      2，使用与灾难备份
+	缺点：1，RDB机制符合要求就会照快照。随时随地启动，会占用一部分系统资源，很可能内存不足直接宕机，宕机后服务器关闭，非正常关闭。
+		  服务器正常关闭时，照快照
+		  key满足一定条件，照快照
+	      2，适用于内存大的机器。
+
+      RDB何时进行照快照：
+	 1，服务器正常关闭时，照快照  即执行./bin/redis-cli shutdown 就会照快照
+	 2，key满足一定条件，照快照：在redis.conf文件中查看到如下条件
+		满足如下条件就会照快照
+		save 900 1   每900秒(15分钟)至少有1个key发生改变(key数据添加、修改、删除)，则dump内存快照。
+		save 300 10  每300秒(5分钟)至少有10个key发生改变，则dump内存快照。
+		save 60 10000 每60秒(1分钟)至少有10000个key发生改变，则dump内存快照。
+   
+   2，AOF：适用于内存比较小的计算机。适用日志的功能保存数据操作。默认AOF机制关闭。
+	   AOF的三种配置方式：
+	   不同步：不进行任何持久化操作。不安全
+	   每秒同步：每秒进行一次AOF保存数据。安全性低，比较节省系统资源
+	   每修改同步：只要有key变化语句(key的增删该)，就进行AOF数据保存。比较安全，但是极为浪费效率
+
+	   AOF操作：
+		只会保存导致key变化的语句
+
+	    开启AOF：在redis.conf文件中把appendonly on修改为appendonly yes，再找到appendfsync always、appendfsync everysec、appendfsync no选择想要的配置，保存文件即可。
+	   AOF配置：
+	    always：每次有数据修改发生都会写入AOF文件
+	    everysec：每秒同步一次，该策略为AOF的缺省策略
+	    no：从不同步。高效但是数据不会被持久化
+
+	    优点：持续性占用极少量的内存资源
+	    缺点：日志文件会特别大，不适用于灾难恢复。恢复数据效率远远低于RDB
+	   
+	
+	
+	

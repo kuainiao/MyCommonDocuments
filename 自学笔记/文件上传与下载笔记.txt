@@ -1,0 +1,33 @@
+1，文件上传格式：
+	<!--文件上传对表单的要求：
+		1，表单中的请求提交方式必须为POST
+		2，表单中应指定所提交的请求为multipart请求，通过<form/>标签中添加enctype属性
+			其值为multipart/form-data
+		3，表单中要有file表单元素
+	  -->
+	<form action="${pageContext.request.contextPath }/registerServlet" method="POST" enctype="multipart/form-data">
+		姓名:<input type="text" name="name"/> <br>
+		年龄:<input type="text" name="age"/> <br>
+		照片:<input type="file" name="photo"/> <br>
+		<input type="submit" value="注册"/>
+	</form>
+
+
+2，如果上传的文件超过所设定的值，例如：factory.setSizeThreshold(1024 * 1024 * 1); //设置边界值为1M。
+   所上传的文件会保存在一个临时文件中，保存在如下位置：
+   E:\前端文件\文件上传与下载\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\03-upload-2\temp
+   保存的位置可以自己设置：
+   // 设置临时文件
+   String tempPath = this.getServletContext().getRealPath("/temp");
+   File temp = new File(tempPath);
+  factory.setRepository(temp);
+
+
+3，//设置单个上传文件的最大值为2M（每个文件都不能超过2M）
+   upload.setFileSizeMax(1024 * 1024 * 2);
+			
+   //设置一次上传所有文件的总和最大值为5M(对于上传多个文件时起作用)
+   upload.setSizeMax(1024 * 1024 * 5);
+
+
+4，

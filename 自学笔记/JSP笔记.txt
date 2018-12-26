@@ -1,0 +1,356 @@
+1,JSP(Java Server Page)：jsp文件的本质是Servlet。只不过，JSP与Servlet不同的是，JSP专门用于进行数据展示的Servlet，其有特殊的写法。
+
+2，JSP注释：
+	JSP注释：<%-- --%>
+	HTML的注释<!-- -->会被JSP翻译引擎翻译(tomcat内置JSP翻译引擎)到Servlet的out.write()中(，本来也是发送到客户端浏览器，因为是注释所以客户端看不到)，
+	而JSP注释则会被JSP翻译引擎忽略，在Servlet中是看不到的。
+	翻译的jsp成java文件放在：E:\前端文件\JSP\.metadata\.plugins\org.eclipse.wst.server.core\tmp1\work\Catalina\localhost\01-jsp-primary下。
+	jsp翻译规范：JSP页面中的HTML、CSS、JavaScript及普通文本，均会被翻译到out.write()中。
+
+3，JSP代码块：
+	代码块：<% %>
+	由于JSP小脚本是被翻译到了Servlet的_jspService()方法中，所以JSP小脚本中是不能出现如下内容的：
+	即在<% %>中不能出现如下内容
+	(1)声明的变量是不能添加权限访问控制符的，例如，private   方法里面的局部变量不能添加访问权限控制符
+	(2)不能定义方法，因为方法里不能嵌套方法。
+	(3)不能定义静态语句。原因同上。静态语句块是放在类里面的，不能放在方法里。
+
+4，JSP声明语句块：
+	声明语句块：<%! %>
+	声明语句块被JSP翻译引擎翻译在类里面，而不是在_jspService()方法里。所以可以用private修饰。
+
+
+5，JSP表达式块
+	表达式块：<%= %>，将里面数据写到客户端浏览器   翻译到_jspService()中的out.print(count);
+	
+	
+	
+5，JSP的内置对象：_jspService()方法中的局部变量(_jspService()中只列出8个，另外一个是Exception),如何找到_jspService()？
+	在E:\前端文件\JSP\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\01-jsp-primary\org\apache\jsp里的java文件里。
+	
+	四大域属性从小到大排列：pageContext,request,session,application(ServletContext) 
+	其中application域属性空间太大(跨会话)，不常用。pageContext太小，也不常用。用的最多的是requset和seeeion。
+
+	pageContext的域属性，只能在当前页面访问到，属性空间太小，一般不用。
+	通过pageContext的一些get方法，可以获取到另外8个对象。
+
+
+
+6，JSP指令：
+	语法：<%@指令名称(page,include,taglib) 属性名=属性值 属性名=属性值 ......%>  注意：属性之间是空格
+	page指令属性：contentType="text/html; charset=UTF-8;pageEncoding="UTF-8" ，一个页面可以包括多个page指令
+	contentType与pageEncoding的区别？pageEncoding默认的MIME类型是text/html,contentType可以设置MIME类型，例如text/xml。
+	当MIME类型是text/html使，使用contentType和pageEncoding是一样的
+		      import属性:导入java包，例如：import="java.util.*,java.text.SimpleDateFormat"
+		      errorPage属性：例如errorPage="/error.jsp" 当当前页面发生异常时，转到另外一个文件
+		      isErrorPage属性：例如："isErrorPage="true"，表示当前页面为错误处理页面，_jspService()方法中会多出一个exception变量。
+		      isErrorPage属性：在errorPage页面设置，在前面我们说过的_jspService()方法中出现java.lang.Throwable exception变量，就可以使用exception.getMeaasge()方法，
+		      可以查看错误信息。
+
+
+7,JSP内置对象中session = pageContext.getSession();底层实际上调用的是this.session = ((HttpServletRequest) request).getSession();没有session对象，就建立个新的。
+
+
+8，在JSP中关闭session:<%@ page session="false" %>;默认为true(开启)。
+
+
+9，静态联编(include指令)：
+	可以共享变量，不能定义同名的变量。(同一个方法中，不能定义同名的变量)
+
+
+10，JSP动作：include动作与forward动作
+	语法格式：<jsp:动作名称 属性名=属性值 属性名=属性值 ......></jsp:动作名称> 或<jsp:动作名称 属性名=属性值 属性名=属性值 ....../>
+	include动作与include指令的区别：include动作生成2个“.java”文件，include指令生成1个“.java”文件。<jsp:include page="/next.jsp"></jsp:include>
+	include动作是动态联编，不能共享变量(因为生成两个.java文件，在不同的类里面)
+	
+	forward动作：<jsp:forward page="/next.jsp"></jsp:forward>
+
+11，EL表达式(重点)：在JSP页面中获取数据的简单方式，在JSP页面的任何静态部分可通过${expression}的形式获取。
+		     el表达式只能在四大域中获取数据，例如：
+		     <%
+			String username = "北京动力节点";
+			pageContext.setAttribute("username", username);
+			request.setAttribute("username", username);
+			session.setAttribute("username", username);
+			application.setAttribute("username", username);
+		     %>
+			username = ${username} <br>
+
+		
+		四大中域中，从域小中找变量输出(要每个域中都找一遍，一共要找四遍，所以效率低，可以指定查找，例如：username = ${applicationScope.username} <br>)。
+		<%
+		pageContext.setAttribute("address", "中国北京");
+		request.setAttribute("address", "大兴区");
+		session.setAttribute("address", "亦庄大族企业湾");
+		application.setAttribute("address", "10号楼A座");
+		%>
+		address = ${address} <br>
+
+		EL的四个内置对象
+		pageScope
+		requestScope
+		sessionScope
+		applicationScope
+
+		El获取javaBean属性:
+		<%
+		Student student = new Student("张三",23);
+		pageContext.setAttribute("student",student);
+		%>
+		student = ${student} <br>
+		name = ${student.name} <br>
+		age = ${student.age} <br>
+		
+		下面这种方式不常用：
+		name = ${student['name']} <br>
+		age = ${student['age']} <br>
+		
+		如访问为null对象的属性，EL是不会抛出空指针异常，仅仅是不显示。
+		name5 = ${student5.name} <br>  //student5没有定义
+
+		当类里面有类的对象时，可以这样访问：
+		schoolName = ${student.school.sname} <br>
+		schoolAddress = ${student.school.address} <br>
+
+		java类中什么是属性？set、get方法中去掉set、get剩余部分首字母小写,例如下面的name就是属性。注意：属性并不是成员变量。
+		public void setName(String name) {
+		this.name = name;
+		}
+
+		EL访问数组：
+		<%
+		String[] names = {"张三","李四","王五"};
+		pageContext.setAttribute("names", names);
+		%>
+		names[1] = ${names[1]} <br>
+
+		
+   EL的内置对象：EL有11个内置对象，常用的内置对象除了前面使用过的四大域属性空间相关的内置对象外还有：
+		(1)pageContext：该pageContext与JSP中的pageContext是同一个对象。
+		   pageContext用法最多的是(在表单中使用获取根目录)：例如，<form action="${pageContext.request.contextPath}/registerServlet" method="POST">
+
+		   在EL的11个内置对象中，除了pageContext外，其他10个内置对象，其类型均为java.util.Map。
+		(2)param(用的较多)：	<!-- 获取请求中的指定参数值，其底层实际调用的是:
+				request.getParameter() -->
+				name = ${param.name} <br>
+				age = ${param.age} <br>
+
+		(3)paramValues：	<!-- 获取请求中的指定参数值的所有值，其底层实际调用的是:
+					request.getParameterValues() -->
+					hobby[0] = ${paramValues.hobby[0]} <br>
+					hobby[1] = ${paramValues.hobby[1]} <br>
+					hobby[2] = ${paramValues.hobby[2]} <br>
+		
+		(4)initParam:	<!-- 获取web.xml中的初始化参数,其底层实际调用的是：
+				servletContext.getInitParameter -->
+				company = ${initParam.company}<br>
+				address = ${initParam.address}<br>
+
+
+    自定义EL函数：详见07-customELFunction项目
+
+
+
+12,JSTL(JSP Standard Tag Library)的EL函数库：一共16个函数
+	(1)substrng("abcdefg",2,5)：从下标2开始到下标5结束但不包括结束截取字符串
+	(2)substringBefore("abcdefg","cd")：截取cd的前面
+	(3)substringAfter("abcdefg","cd")：截取cd的后面
+
+	EL总结：
+	(1)EL不能出现在Java代码块，表达式块等JSP的动态部分
+	(2)EL只能从四大域属性中获取数据
+	(3)El不会抛出异常。若访问一个null对象的属性，则什么也不显示
+	(4)El不会抛出数组访问越界异常，若访问一个数组中不存在的元素，则什么也不显示
+	(5)EL不具有对字符串处理的能力，就连简单的字符串拼接都不行。
+
+
+13，自定义标签：JSP中支持自定义标签。自定义标签是为了简化代码，使用自定义标签替换一个Java代码片段，完成相同的功能。
+	要定义一个类，该类继承自javax.servlet.jsp.tagext.SimpleTagSupport,重写doTag()方法（就是所谓的标签处理器）。具体做法详见09-customTag-base项目。
+
+	带标签体的自定义标签：详细见10-customTag-tagBody
+	
+	带属性的自定义标签：详细见11-customTag-tagAttribute
+
+	自定义遍历List的forEachList标签：详细见12-customTag-forEachList
+
+
+12，将自定义标签库打包发行
+	步骤：
+	右键所选项目，选择Export -> export->JARfile ->选择要打包的文件(一般打包.java文件)
+
+	如何使用自定义的jar包？
+	首先要将tld文件拖到jar包的META-INF文件夹下(可以使用解压工具打开jar包找到META-INF文件夹，直接把.tld文件拖进去即可。)
+	在把jar包引入到eclipse(与其他jar包的引入相同)
+
+
+13，JSTL标签库：
+	(1)核心标签库
+	(2)格式化标签库
+	(3)EL函数库
+	(4)SQL操作标签库(不使用,已经完全由Java代码完成)
+	(5)XML操作标签库(不使用,已经完全由Java代码完成)
+
+
+	(1)核心标签库(以下四个标签不常用)：
+	1.1 set标签
+	<br>---------------c:set将变量存放到指定域中---------<br>
+	<c:set var="name" value="张三" scope="session"/>  //scope如果不写，默认是page
+	name = ${pageScope.name } <br> 
+	name = ${sessionScope.name } <br>  //张三
+
+	<br>---------------c:set为Bean的属性赋值---------<br>
+	<%
+		Student student = new Student();
+		pageContext.setAttribute("student", student);
+	%>
+	<c:set value="李四" property="name" target="${pageScope.student }"></c:set>
+	<c:set value="24" property="age" target="${pageScope.student }"></c:set>
+	student = ${student } <br>
+
+	<br>---------------c:set为Map赋值---------<br>
+	<%
+		Map<String,Object> map = new HashMap<>();
+		pageContext.setAttribute("map", map);
+	%>
+	<c:set value="北京动力节点" property="company" target="${pageScope.map }"></c:set>  //在本例中property表示的是key
+	<c:set value="北京大兴亦庄" property="address" target="${pageScope.map }"></c:set>
+	map = ${map }<br>
+	company = ${map.company }<br>
+	address = ${map.address }<br>
+
+	1.2 remove标签
+	<br>---------------c:remove删除指定域中的属性---------<br>
+	<c:set var="school" value="pag_school"/>
+	<c:set var="school" value="req_school" scope="request"></c:set>
+	<c:set var="school" value="ses_school" scope="session"></c:set>
+	<c:set var="school" value="app_school" scope="application"></c:set>
+	<c:remove var="school" scope="session"/>
+	school = ${pageScope.school } <br>
+	school = ${requestScope.school } <br>
+	school = ${sessionScope.school } <br>
+	school = ${applicationScope.school } <br>
+	
+	<br>---------------c:remove删除不指定域中的属性(将会全部删除掉)---------<br>
+	<c:set var="school" value="pag_school"/>
+	<c:set var="school" value="req_school" scope="request"></c:set>
+	<c:set var="school" value="ses_school" scope="session"></c:set>
+	<c:set var="school" value="app_school" scope="application"></c:set>
+	<c:remove var="school"/>
+	school = ${pageScope.school } <br>
+	school = ${requestScope.school } <br>
+	school = ${sessionScope.school } <br>
+	school = ${applicationScope.school } <br>
+
+	1.3 catch标签(捕获异常用)
+	<br>---------------c:catch---------<br>
+	<c:catch var="ex">
+		<%
+			int i = 3/0;
+		%>
+	</c:catch>
+	ex= ${ex.message } <br>
+	
+	1.4 out标签
+	<br>---------------c:out---------<br>
+	<%-- <c:set var="department" value="计算机系"></c:set>--%>
+	department=<c:out value="${ department}" default="计算机系"></c:out> <br> //与下面EL的区别是可以使用default
+	department = ${department } <br>
+
+	<br>---------------c:out---------<br>
+	<c:set var="department" value=""></c:set>
+	department=<c:out value="${ department}" default="计算机系"></c:out> <br>  //没有定义时才使用default的值，所有这里不会有显示
+	department = ${department } <br>
+
+	<c:set var="topic" value="<h1>我爱中国<h1>"></c:set>
+	topic = <c:out value="${topic }" escapeXml="false"></c:out> <br>  //不写上escapeXml="false"，默认是忽略html标签，会原样输出。
+	topic = ${topic } <br>  //使用EL表达式解析了html标签
+
+	下面几个是常用的标签
+	1, if标签
+	<br>---------------c:if---------<br>
+	<c:set var="user" value="张小三" scope="session"/>
+	<c:if test="${user =='张三' }">
+		<a href="#">进入系统</a>
+	</c:if>
+
+	2, choose标签
+	<br>---------------c:choose---------<br>
+	<c:set var="pageno" value="3"/>
+	<c:set var="totalPages" value="5"/>
+	<c:choose>
+		<c:when test="${pageno == 1 }">
+			首页	上一页  <a href="#">下一页</a>   <a href="#">末页</a> 当前${pageno }/${totalPages }页
+		</c:when>
+		<c:when test="${pageno == totalPages }">
+			<a href="#">首页</a>   <a href="#">上一页</a> 下一页  末页   当前${pageno }/${totalPages }页
+		</c:when>
+		<c:otherwise>
+			<a href="#">首页</a>   <a href="#">上一页</a>  <a href="#">下一页</a>  <a href="#">末页</a>  当前${pageno }/${totalPages }页
+		</c:otherwise>
+	</c:choose>
+	注意：当两个value都为1时，执行第一个，执行原则是只要匹配上下面就不执行。
+
+	3，forEach标签
+	<%
+		List<String> names = new ArrayList<>();
+		names.add("Recyo");
+		names.add("郑二");
+		names.add("张三");
+		names.add("李四");
+		names.add("王五");
+		names.add("赵六");
+		names.add("田七");
+		names.add("刘八");
+		pageContext.setAttribute("names", names);
+	%>
+	<c:forEach items="${names }" var="name" begin="0" end="7" step="2">   //step表示的步长
+	${name }<br>
+	</c:forEach>
+
+	</c:forEach>
+	<c:forEach begin="1" end="10" var="num" step="2">
+		${num }
+	</c:forEach>
+
+
+	(2)格式化标签库：
+	1,formatDate标签(掌握这一个就可以了)
+	<br>----------------格式化标签库：日期----------------<br>
+	<%
+		Date now = new Date();
+		pageContext.setAttribute("now", now);
+	%>
+	now= ${now } <br>
+	now = <fmt:formatDate value="${now }" pattern="yyyy-MM-dd"/> <br>
+	now = <fmt:formatDate value="${now }" pattern="yyyy-MM-dd" var="birth"/> <br> <!--一旦使用var,这里就不会有输出  -->
+	
+	生日:<input type="text" name="birthday" value="${birth }" > <br>
+
+
+	2，parseDate标签
+	<br>----------------字符串转换为日期----------------<br>
+	<fmt:parseDate value="1949-10-01" pattern="yyyy-MM-dd"></fmt:parseDate><br>
+	<fmt:parseDate value="1949/10/01" pattern="yyyy/MM/dd" var="day"></fmt:parseDate><br>
+	day = ${day } <br>
+
+	3,formatNumber
+	<br>----------------格式化数字---------------<br>
+	<fmt:formatNumber value="${12345678 }"></fmt:formatNumber> <br> <!-- 默认加千位分隔符 -->
+	<fmt:formatNumber value="${12345678 }" groupingUsed="false"></fmt:formatNumber> <br> <!--取消 千位分隔符 -->
+	<fmt:formatNumber value="${12345.678 }" maxIntegerDigits="8" minIntegerDigits="6"></fmt:formatNumber> <br> 
+	<!--maxIntegerDigits:表示整数部分最多多少位的意思  -->
+	<fmt:formatNumber value="${12345.678 }" maxFractionDigits="2"></fmt:formatNumber> <br> 
+	<!--maxFractionDigits:表示小数部分最多多少位的意思  -->
+
+	4,parseNumber
+	<br>----------------字符串转换为数字----------------<br>
+	<fmt:parseNumber value="12345.678" integerOnly="true" var="num"></fmt:parseNumber> <!--只显示整数部分  -->
+	num + 1 = ${num + 1 }
+
+
+13,sms(学生管理系统项目)关于mysql：
+	当插入一条数据时，马上返回其id值：
+	例如：
+	insert into student(num) values('00007');
+	select @@identity; 或者select last_insert_id(); 这两句必须紧跟insert语句，单独写结果为0。
+		

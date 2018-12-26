@@ -1,0 +1,132 @@
+public Page<LuckydrawModel> findLuckDrawList(Integer pageNo, Integer pageSize, FloorStatusEnum luckDrawStatus) {
+        if(pageNo == null){
+            pageNo = 0;
+        }
+
+        Pageable pageRequest = new PageRequest(pageNo, pageSize, new Sort(Sort.Direction.DESC, "code"));
+
+        QueryParams<Luckydraw> queryParams = new QueryParams<>();
+
+        if(!Objects.isNull(luckDrawStatus)){
+            switch (luckDrawStatus){
+                case STARTING:{
+                    queryParams.and(Filter.lessThanOrEqualTo("startDate",new Date()));
+                    queryParams.and(Filter.greaterThanOrEqualTo("endDate",new Date()));
+                    break;
+                }
+                case NO_START:{
+                    queryParams.and(Filter.greaterThanOrEqualTo("startDate",new Date()));
+                    break;
+                }
+                case EXPIRED:{
+                    queryParams.and(Filter.lessThanOrEqualTo("endDate",new Date()));
+                    break;
+                }
+            }
+        }
+        Page<Luckydraw> all = this.luckyDrawRepository.findAll(queryParams, pageRequest);
+        List<LuckydrawModel> list = new ArrayList<>();
+
+        //将Luckydraw转换成LuckydrawModel
+        convertToLuckydrawModel(all, list);
+
+        PageImpl<LuckydrawModel> luckydrawModels = new PageImpl<>(list, pageRequest, all.getTotalElements());
+        return luckydrawModels;
+    }
+
+    private void convertToLuckydrawModel(Page<Luckydraw> all, List<LuckydrawModel> list) {
+        if(all != null && all.getTotalElements() > 0){
+            for (Luckydraw luckydraw : all.getContent()) {
+                LuckydrawModel luckydrawModel = new LuckydrawModel();
+                luckydrawModel.setId(luckydraw.getId());
+                if(StringUtils.isNotBlank(luckydraw.getName())){
+                    luckydrawModel.setName(luckydraw.getName());
+                }
+
+                if(luckydraw.getStartDate() != null){
+                    luckydrawModel.setStartDate(luckydraw.getStartDate());
+                }
+
+                if(luckydraw.getEndDate() != null){
+                    luckydrawModel.setEndDate(luckydraw.getEndDate());
+                }
+
+                if(luckydraw.getStartDate() != null && luckydraw.getEndDate() != null){
+                    Date nowTime = new Date();
+                    if(nowTime.after(luckydraw.getStartDate()) && nowTime.before(luckydraw.getEndDate())){
+                        luckydrawModel.setLuckDrawStatus(FloorStatusEnum.STARTING);
+                    }else if (nowTime.before(luckydraw.getStartDate())){
+                        luckydrawModel.setLuckDrawStatus(FloorStatusEnum.NO_START);
+                    }else {
+                        luckydrawModel.setLuckDrawStatus(FloorStatusEnum.EXPIRED);
+                    }
+                }
+                list.add(luckydrawModel);
+            }
+        }
+    }
+
+    @Override
+    public void deleteLuckDrawById(String luckDrawId) {
+        if(StringUtils.isNotBlank(luckDrawId)){
+            this.luckyDrawRepository.logicDelete(luckDrawId);
+        }
+    }
+
+
+Page<LuckydrawModel> findLuckDrawList(Integer pageNo, Integer pageSize, FloorStatusEnum luckDrawStatus);
+
+void deleteLuckDrawById(String luckDrawId);
+
+
+
+ /**
+     * 删除抽奖活动
+     * @param luckDrawId
+     * @return
+     */
+    @GetMapping(value = "/content/delLuckDraw.json")
+    public HttpEntity delLuckDraw(String luckDrawId){
+        try {
+            this.luckydrawRest.delLuckDraw(luckDrawId);
+            return ResponseEntity.ok(ImmutableMap.of("msg","ok"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(ImmutableMap.of("msg","no"));
+        }
+    }
+
+
+    /***
+     * 抽奖活动
+     * @return
+     */
+//    @PreAuthorize("hasAuthority('admin.luckyDraw.list')")
+//    @AuthorityFunction(name = "抽奖活动", type = FunctionTypeEnum.ADMIN_CONTENT, authority = "admin.luckDraw.list", sn = 5)
+    @GetMapping("/content/luckyDrawActivity.html")
+    public String luckyDrawActivity(@RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo, FloorStatusEnum luckDrawStatus, Model model){
+        PagedResources<LuckydrawModel> luckDrawList = this.luckydrawRest.findLuckDrawList(pageNo - 1, luckDrawStatus);
+        addAttributeIfValueNoBlank(model, "floorList", luckDrawList);
+        addAttributeIfValueNoBlank(model, "floorStatusEnums", FloorStatusEnum.values());
+        addAttributeIfValueNoBlank(model, "showFloorStatus", luckDrawStatus);
+        model.addAttribute("pageHtml", PageTool.generatePageHtml("page", luckDrawList));
+        model.addAttribute("listSize", luckDrawList.getContent().size());
+        return "content/luckyDrawActivity";
+    }
+
+
+
+    @Override
+    public PagedResources<LuckydrawModel> findLuckDrawList(Integer pageNo, FloorStatusEnum luckDrawStatus) {
+        return assembler.toResource(luckydrawService.findLuckDrawList(pageNo,PageConstant.SUPPLIER_PAGE_DEFAURE_SIZE,luckDrawStatus));
+    }
+
+    @Override
+    public void delLuckDraw(String luckDrawId) {
+        luckydrawService.deleteLuckDrawById(luckDrawId);
+    }
+
+
+    Page<LuckydrawModel> findLuckDrawList(Integer pageNo, Integer pageSize, FloorStatusEnum luckDrawStatus);
+
+    void deleteLuckDrawById(String luckDrawId);

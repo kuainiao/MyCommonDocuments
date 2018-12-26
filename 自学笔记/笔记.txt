@@ -1,0 +1,31 @@
+1，PowerDesigner：ObjectOrientedObject -> UseCaseDiagram中：
+	1)角色(小人图标)：代表系统中的一类用户。
+	2)用例(圆圈图标)：代表业务功能
+	3)连线关系：哪个角色操作哪些功能
+
+
+2，Oracle创建用户：
+	用PLSQL创建用户：在Object -> User右键新建。
+	默认表空间：USERS
+	临时表空间：TEMP
+	
+	点击角色权限：角色选择connect和resource。
+
+3，使用PD创建数据库表：选择：Physical Data Model -> Physical Diagram
+	建表原则：1，根据用户所说的最大长度，比较模糊的长度的基础上。翻2到4倍。
+		  2，人名varchar2一般是20到30.
+		  3，例如，备注 原本为NOTE，而一般这么写CNOTE，当感觉可能和关键字相冲突时，就加一个C前缀。备注用个VARCHAR2(2000)，VARCHAR2(8000)是上限了。
+
+		  4,主键：1)自增类型INT/LONG：查询速度快，处理多个系统合并时，主键会重复。
+			2）UUID字符串：速度慢，处理多个系统合并时，主键一般不重复，大型系统时使用。长度VARCHAR2(40)
+		
+		  5，创建人：VARCHAR2(40)，是当前登录人的ID。
+		  6，创建部门：VARCHAR2(40)，当前登录人所在部门
+		  7，创建时间：TIMESTAMP
+
+
+4，PD的配置环境：
+	1,解决建表时name和code联动变化：Tool -> General Option -> Dialog -> 把Name to code mirroring的√去掉。
+	2,添加Comment（备注）字段：点击第二个漏斗标志。
+		
+

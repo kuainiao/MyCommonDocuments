@@ -1,0 +1,494 @@
+1，ccf_store表与通过company_id与ccf_supplier_company表关联：一个供应商只对应一个store，sccf_tore表中有accountBalance(账户余额)、drawMoney(可提现金额)等字段，所以要查询这些数字应该从           ccf_store表中查询。
+   ccf_capital_record(资金流水)表通过store_id与ccf_store表关联：一个store可以有多个capitalrecord。可提现金额从ccf_capital_record表中查找，限制好store_id和withdraw_state='NO_WITHDRAW'。
+   ccf_payment_list(缴费清单表)表通过store_id与ccf_store表关联：一个store可以有多个缴费清单，可以根据store_id查询到供应商应缴的服务费。
+
+
+
+2，Rest继承BaseRest，RestImpl<实体类>继承BaseRestImpl<实体类>，：注意这里RestImpl和BaseRestImpl必须要写实体类泛型，并且该泛型其他Service不能写过的，要不然会报错。
+Service层接口继承BaseService接口，Service接口的实现类继承BaseServiceImpl类，dao层(Repository)接口继承BaseRepository接口。
+
+3，JPA多表关联的查询参见CapitalRecordPlatSpec的toPredicate方法。
+
+4，清算明细页面中：来源编号=资金流水表中订单号，订单金额=资金流水表中的订单金额，清算金额=清算明细表中交易金额。
+
+5，Trade表中storeName(店铺名称) = 供应商的名称。
+
+6，WithdrawDeposit表中：private Store store;//店铺id  若为null则是平台
+
+
+7，优惠券活动状态对应：
+	 if (null != couponActivtyStatusEnum) {
+            //1活动未开始  2 活动进行中  3活动已结束
+            switch (couponActivtyStatusEnum) {
+                case SUSPEND:{
+                    queryParams.and(Filter.eq("status", CouponStatusEnum.SUSPEND));
+                    break;
+                }
+                case NOSTART: {
+                    queryParams.and(Filter.greaterThanOrEqualTo("activityStartTime", new Date()));
+                    break;
+                }
+                case INPROGRESS: {
+                    queryParams.and(Filter.lessThanOrEqualTo("activityStartTime", new Date()));
+                    queryParams.and(Filter.greaterThanOrEqualTo("activityEndTime", new Date()));
+                    queryParams.and(Filter.ne("status", CouponStatusEnum.SUSPEND));
+                    break;
+                }
+                case FINISHED: {
+                    queryParams.and(Filter.lessThanOrEqualTo("activityEndTime", new Date()));
+                    break;
+                }
+            }
+        }
+
+
+
+8，ccf项目select2插件完美使用详见：SettlementController类中的"settlement/financeInfoSet"前台页面，使用BootStrap的Modal记得把tabindex=”-1”属性去掉;
+	依照上面select2插件的使用，传递的是id值。
+
+
+9，平台提现参考记录：CapitalRecordServiceImpl   applyWithdrawOperation()方法：
+
+	public void applyWithdrawOperation(BigDecimal withdrawMoney, BigDecimal serviceCharge) {
+		String dateStr = DateFormatUtils.format(new Date(), "yyyyMMdd");
+		String capitalCode = dateStr + String.valueOf((int)((Math.random()*9+1)*100000));
+		WithdrawDeposit withdrawDeposit = new WithdrawDeposit(); //平台提现记录
+		withdrawDeposit.setMoney(withdrawMoney);
+		withdrawDeposit.setState(WithdrawDepositStateEnum.APPLICATIION);
+		withdrawDeposit.setCapitalRecordCode(capitalCode);
+		withdrawDeposit.setWithdrawServiceCharge(serviceCharge);
+		withdrawDeposit.setPayType(PaymentWayEnum.THIRD_PARTY);
+		withdrawDeposit = this.withdrawDepositRepository.save(withdrawDeposit);
+		CapitalRecord capitalRecord = new CapitalRecord(); //生成平台提现资金流水
+		capitalRecord.setSource(CapitalRecordSourceEnum.WITHDRAWDEPOSIT);
+		capitalRecord.setMoney(withdrawMoney);
+		capitalRecord.setCapitalRecordCode(dateStr + String.valueOf((int)((Math.random()*9+1)*100000)));
+		capitalRecord.setWithdrawServiceCharge(serviceCharge);
+		capitalRecord.setType(CapitalRecordEnum.PLATFORM);
+		capitalRecord.setWithdrawDepositId(withdrawDeposit.getId());
+		capitalRecord.setCapitalRecordStateEnum(CapitalRecordStateEnum.CAN_SETTLE);
+		capitalRecord.setPayType(PaymentWayEnum.THIRD_PARTY);
+		this.capitalRecordRepository.save(capitalRecord);
+    }
+
+
+10，JPA原生完美查询(各种组合条件都可以)详见：PlatformVoucherSubsidySpec类、CouponServiceImpl类的getplatformTicketRecord()方法。
+    关联表查询详见PlatformSubsidyTicketSpec
+
+11,JPA多条件查询例子：GoodsRepositoryImpl中的findAllBySpecific()方法。该方法对商品列表的各种条件的查询很完整，可以参考。
+
+11，springdata使用@Query注解含有limit查询的参见： InOrOutAccountRepository
+
+12，修改页面后刷新页面： setTimeout("window.location.reload()", 1000); 在ajax方法里使用。
+
+13，SpringData一种新的查询方法：AntistopListServiceImpl中的listAntistopList()方法：
+	PageRequest pageRequest = new PageRequest(pageNo, pageSize, sort);
+        AntistopList antistopList = new AntistopList();
+        antistopList.setStatus(status);
+        antistopList.setAntistopName(antistopName);
+        ExampleMatcher matcher = ExampleMatcher.matching() //构建对象
+                .withMatcher("antistopName", ExampleMatcher.GenericPropertyMatchers.contains()) //姓名采用“模糊匹配”的方式查询
+                .withIgnorePaths("focus");
+        Example<AntistopList> exAntistopList = Example.of(antistopList, matcher);
+        Page<AntistopList> antistopLists = this.antistopListRepository.findAll(exAntistopList, pageRequest);
+
+
+
+14，jquery中relatedTarget、closest()方法，以及Html5data自定义的属性的用法见ContentController类中的content/searchKeywords
+	一种比较好的回显方法：
+	$("#editModal").modal({
+                keyboard: true,
+                backdrop: "static",
+                show: false,
+            }).on("show", function (e) {
+                var antistopId = $(e.relatedTarget).closest('tr').data('id');
+                var parameter = $(e.relatedTarget).closest('tr').data('parameter');
+                var antistopName = $("[data-id='" + antistopId + "']").find(".antistopName").text();
+                // var linkAddress = $("[data-id='" + antistopId + "']").find(".linkAddress").text();
+                var orderno = $("[data-id='" + antistopId + "']").find(".orderno").text();
+                var beginTime = $("[data-id='" + antistopId + "']").find(".beginTime").text();
+                var endTime = $("[data-id='" + antistopId + "']").find(".endTime").text();
+                var disposeType = $(e.relatedTarget).closest('tr').data('type');
+                $("input[name='Mid']").val(antistopId);
+                $("input[name='MantistopName']").val(antistopName)
+                // $("input[name='MlinkAddress']").val(linkAddress)
+                $("input[name='Morderno']").val(orderno)
+                $("input[name='MbeginTime']").val(beginTime)
+                $("input[name='MendTime']").val(endTime)
+                $("input[name='parameter']").val(parameter)
+                if(disposeType !=null&&disposeType !=''){
+                    $("#dispose").find("option[value='"+disposeType+"']").attr("selected",true)
+                }else {
+                    $("#dispose").find("option[value='']").attr("selected",true)
+                }
+
+            });
+
+
+ 15，jedate时间插件：详见ContentController类中的content/searchKeywords
+
+
+
+16，SpringData一种怪异的写法： @Modifying
+			       @Query("update #{#entityName} e set e.deleted = true , e.modifyDate = CURRENT_TIME where e.id = :id")
+			       void logicDelete(@Param("id") String id);
+
+
+
+
+
+17，Spring框架对异常的处理：参见ContentController类中的delFloor(PC版)：
+	    @GetMapping(value = "/content/delFloor.json")
+	    public ResponseEntity delFloor(String floorId){
+		try {
+		    this.floorRest.delFloor(floorId);
+		    return ResponseEntity.ok(HttpStatus.OK);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		    return ResponseEntity.ok(HttpStatus.INTERNAL_SERVER_ERROR);   //这里,异常的处理。
+		}
+	    }
+	
+
+
+
+18，项目中用到的异常枚举：ExceptionEnum
+
+
+19，项目中图片的路径：imgUrl: "http://ccf-file.oss-cn-shenzhen.aliyuncs.com/"，例如：src="imgUrl + data.mainPhoto"
+     如果商品没有图片，设置商品的默认主图：RedisConstant.DEFAULT_GOODS_MAIN_IMG
+
+
+20，项目中PagedResources的metadata(元数据)： PagedResourcesAssembler类中的方法PagedResources<R> resource = this.createPagedResource(resources, asPageMetadata(page), page);
+	public class PagedResources<T> extends Resources<T> {
+	    public static PagedResources<?> NO_PAGE = new PagedResources();
+	    private PagedResources.PageMetadata metadata;
+	 
+	 ...
+	}
+
+	metadata.number  //实质就是PageRequest pageRequest = new PageRequest(pageNo, pageSize);时pageNo的值。
+
+
+21，项目中elasticSearch使用例子：GoodsSearchImpl类中的getBoolQueryBuilder()方法
+
+
+22，springdata多表关联写法：详见PromotionRepository接口
+	@Query("select distinct p.goods.goodsBasic.goodsClass from Promotion p left join p.goods g left join g.businessArea.areas n where (g.businessArea is null or n in (:areas)) and p.promotionType = :promotionType and p.promotionState <> 'SUSPEND' and p.activityStartTime < :today and (p.activityEndTime is null or p.activityEndTime > :today)")
+	List<GoodsClass> specialOfferCategories(@Param("promotionType") PromotionEnum promotionType, @Param("today") Date today, @Param("areas") Set<Area> areas);
+
+
+
+23，项目redis的使用：见GoodsAmountRedisTool的push2Redis方法。
+
+24，获取中文名字的首字母：PinyinHelper.getShortPinyin(goodsSaleModel.getAppGoodsName()).substring(0, 1).toUpperCase();
+
+25，更新ES中的商品方法：this.goodsSearch.updateGoodsDocumentInfo(updateGoods);
+
+26，商品生成编码方法：CodeGenerator.generate(DatabaseConstant.GOODS_CODE_LENGTH, true)
+
+
+--------------------项目中的新知识----------------------------
+1，springdata：
+	@Query("select sum(p.money) from PaymentList p where p.store.id = :storeId and p.state in (:states) and p.month<:date")
+	BigDecimal sumStorePaymentMoney(@Param("storeId") String storeId, @Param("states") Set<PaymentListStateEnum> states, @Param("date") Date date);
+	p.state in (:states)：可以直接从Set集合中查找条件。
+
+
+2，jdk8的特性：
+	1,//jdk8中获取当前月份的第一天的时间，精确到00:00:00，例如9月份：2018-09-01 00:00:00
+	Date.from(LocalDate.now().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+	2,Optional.ofNullable(null).orElse(BigDecimal.ZERO);
+	Optional.ofNullable(T value)，该方法和 of 方法的区别在于，传入的参数可以为 null，如果 Optional 中有值则将其返回，否则返回 orElse 方法传入的参数。
+
+
+3，JPA多表关联的查询参见CapitalRecordPlatSpec的toPredicate方法。
+
+
+4，SpringMVC中使用StandardServletMultipartResolver进行文件上传：
+	从Spring3.1开始，Spring提供了两个MultipartResolver的实现用于处理multipart请求：
+	1，CommonsMultipartResolver
+	2，StandardServletMultipartResolver
+
+	CommonsMultipartResolver使用commons Fileupload来处理multipart请求，所以在使用时，必须要引入相应的jar包； 
+	StandardServletMultipartResolver是基于Servlet3.0来处理multipart请求的，所以不需要引用其他jar包，但是必须使用支持Servlet3.0的容器才可以。 
+	以tomcat为例，从Tomcat 7.0.x的版本开始就支持Servlet3.0了。
+
+5，request对象的getScheme和getProtocol获取协议名称
+	getScheme获取的是使用的协议		http 或https
+	getProtocol获取的是协议的名称		HTTP/1.11
+	getServerName获取的是域名		xxx.com
+	getLocalName				获取到的是IP 
+
+
+6，JAVA中request.getParameterMap()用法：
+	 根据Java规范：request.getParameterMap()返回的是一个Map类型的值，该返回值记录着前端（如jsp页面）所提交请求中的请求参数和请求参数值的映射关系。这个返回值有个特别之处——只能读。不像普通的Map类型数据一样可以修改。这是因为服务器为了实现一定的安全规范，所作的限制。比如WebLogic，Tomcat，Resin，JBoss等服务器均实现了此规范。
+	如果实在有必要在取得此值以后做修改的话，要新建一个map对象，将返回值复制到此新map对象中进行修改，用新的map对象代替使用之前的返回值。
+
+	获取表单数据时总是用request.getParameter(“name”)，根据表单中的name值获取value值，需要获取几项就得重复写几次getParameter，而request.getParameterMap方法则不同，不需要参数，返回结果为Map<String,String[]> 。其实，request.getParameterMap()方法也是通过前台表单中的name值进行获取的，获取到后又进行了一次封装。 之所以返回的map中的value为字符串类型的数组，是为了解决表单中有多个name值一样的项。
+
+
+7， @SuppressWarnings("unchecked")
+告诉编译器忽略 unchecked 警告信息，如使用List，ArrayList等未进行参数化产生的警告信息。
+
+				
+8，当使用JPA配置实体时，如果有两个属性（一个是一般属性，一个是多对一的属性）映射到数据库的同一列，就会报错。
+   这时，在多对一的@JoinColumn注解中添加insertable = false, updatable = false就能解决。
+
+
+9，BigDecimal相加的一些问题？
+	BigDecimal b1 = new BigDecimal(0.423);
+	BigDecimal b2 = new BigDecimal(0.612);
+	System.out.println(b1.add(b2));  //1.034999999999999975575093458246556110680103302001953125   精度不对
+	
+	BigDecimal b7 = new BigDecimal(b1.toString());
+	BigDecimal b8 = new BigDecimal(b2.toString());
+	System.out.println(b7.add(b8)); //1.034999999999999975575093458246556110680103302001953125    精度不对
+
+	BigDecimal b9 = new BigDecimal(b1+"");
+	BigDecimal b10 = new BigDecimal(b2+"");
+	System.out.println(b9.add(b10)); //1.034999999999999975575093458246556110680103302001953125    精度不对
+
+
+	BigDecimal b3 = new BigDecimal("0.612");
+	BigDecimal b4 = new BigDecimal("0.423");
+	System.out.println(b3.add(b4)); //1.035
+
+	BigDecimal b5 = new BigDecimal(0.42311 + "");
+	BigDecimal b6 = new BigDecimal(0.61222 + "");
+	System.out.println(b5.add(b6)); //1.03533
+
+	BigDecimal b9 = new BigDecimal(b1+"");
+	BigDecimal b10 = new BigDecimal(b2+"");
+	System.out.println(b9.add(b10)); //1.034999999999999975575093458246556110680103302001953125   精度不对
+
+	总结：BigDecimal通过new字符串的方式精度是准确的，double类型通过+“""”变为字符串，在new也可以，而BigDecimal类型通过toString和+“""”变为字符串类型都不可以是精度准确。
+	      BigDecimal类型累加，要先通过doubleValue()方法转换成double类型，然后double类型通过+“""”变为字符串。
+
+10，mappedBy：
+	我们知道，mappedBy用于指定具有双向关系的两个实体中。哪个实体是被关联处理的。它有如下四个特点:
+
+	1.只有OneToOne,OneToMany,ManyToMany上才有mappedBy属性，ManyToOne不存在该属性；
+
+	2.@OneToMany(mapped=“由One的一方指向Many的一方，并且，这个属性应该等于Many的一方中含有One类的属性的对象名，否则会出错”)
+
+	3.关系的拥有方(即Many的一方)负责关系的维护，在拥有方建立外键。所以用到@JoinColumn
+
+
+11，MySQL中不等于会过滤掉 Null 的问题：
+	在写SQL 条件语句时经常用到 不等于 != 的筛选条件。 
+  	此时要注意此条件会将字段为 Null 的数据也当做满足不等于的条件而将数据筛选掉。
+	应该这么写：SELECT * FROM A WHERE IFNULL(B1,'')  != 1  或者 SELECT * FROM A WHERE B1 != 1 OR B1 is Null
+
+
+12，BigDecimal.setScale()方法用于格式化小数点
+	setScale(1)表示保留一位小数，默认用四舍五入方式 
+	setScale(1,BigDecimal.ROUND_DOWN)直接删除多余的小数位，如2.35会变成2.3 
+	setScale(1,BigDecimal.ROUND_UP)进位处理，2.35变成2.4 
+	setScale(1,BigDecimal.ROUND_HALF_UP)四舍五入，2.35变成2.4
+	setScale(1,BigDecimal.ROUND_HALF_DOWN)四舍五入，2.35变成2.3，如果是5则向下舍
+	注释：
+	1：
+	scale指的是你小数点后的位数。比如123.456则score就是3.
+
+	BigDecimal.valueOf(0.99)   // 0.99			double类型不会损失精度
+	BigDecimal.valueOf(0.99f)  // 0.9900000095367432	float类型会损失精度
+	BigDecimal.valueOf(100)	   //100			int类型不会损失精度
+	
+	Double.valueOf(responseParamter.getDataBody().getSubAccountMoney())-Double.valueOf(responseParamter.getDataBody().getFreezeMoney())).
+	divide(BigDecimal.valueOf(100).setScale(2,BigDecimal.ROUND_HALF_UP)    // bigdecimal.divide()   bigdecimal的除法，括号里的数是除数。
+
+
+13，SpringData的 @Query注解：
+	设置nativeQuery=true 即可以使用原生的SQL进行查询(即平常的从数据库中查询)，例如：
+	@Query(value = "SELECT count(id) FROM jpa_persons", nativeQuery = true)
+	long getTotalCount();
+
+
+14， select2组件使用的一些问题：下拉框默认选中
+$(function () {
+        //select2组件会影响该功能的使用，要放在select2组件初始化的上面，不然无法显示。
+        $("[name='bankType']").find("option").each(function (index,item) {
+            if($(item).val() == $("[name='input']").val()){
+                $(item).attr("selected","selected");
+            }
+        });
+
+        // 下拉列表样式
+        $("select").select2({
+            minimumResultsForSearch: Infinity
+        });
+
+        selectCheck.selectInitialize();
+
+    })
+
+
+15，Date的after和before：
+   Date1.after(Date2),当Date1大于Date2时，返回TRUE，当小于等于时，返回false；
+
+   Date1.before(Date2)，当Date1小于Date2时，返回TRUE，当大于等于时，返回false；
+
+
+
+16，hibernate @Where注解：
+	这是一个hibernate的注解，主要作用是在HQL转成SQL时自动添加where条件。
+
+
+17，SpringData，获取当前时间：CURRENT_TIME
+    @Modifying
+    @Query("update #{#entityName} e set e.deleted = true , e.modifyDate = CURRENT_TIME where e.id = :id")
+    void logicDelete(@Param("id") String id);
+	
+
+Optional用法：http://www.importnew.com/22060.html
+
+18，json格式字符串的拼写形式："[{lattice:\"格子\"},{lattice:\"222\"}]"
+    js中json字符串转换成json对象：
+    var jsonStr = '{x : 1, y : 1}';
+    var jsonObj = eval('(' +  jsonStr + ')');  或者 var mydata = JSON.parse(jsonStr);
+
+    将json对象转换成json字符串：JSON.stringify(json对象)将其转换为json字符串
+
+
+19，Java中字符串类型转boolean类型：
+	将字符串参数解析为 boolean 值。如果 String 参数不是 null 且在忽略大小写时等于"true"，则返回的 boolean 表示 true 值。
+	示例：Boolean.parseBoolean("True") 返回 true。
+	示例：Boolean.parseBoolean("yes") 返回 false。
+
+
+20，Java获取3个月前的时间的一个示例：
+	Instant instant = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).minusMonths(3).toInstant();
+        Date threeMonthAgo = Date.from(instant);
+	
+
+    获取前三个月的今天的时间(上面的获取的是从00:00:00开始)：
+	Calendar c = Calendar.getInstance();
+	c.setTime(new Date());
+	c.add(Calendar.MONTH, -3);
+	Date threeMonthAgo = c.getTime();
+
+21，总结一下：
+	使用Collectors.toMap方法时的两个问题： 
+	1、当key重复时，会抛出异常：java.lang.IllegalStateException: Duplicate key **
+	2、当value为null时，会抛出异常：java.lang.NullPointerException
+	大家通常希望这个方法是可以容错的，遇到重复的key就使用后者替换，而且HashMap的value可以是null。
+	将之前出错的代码调整如下：
+
+	Java代码  收藏代码
+	//下面这句会出异常java.lang.IllegalStateException: Duplicate key  
+	Map<String, Person> map1 = list.stream().collect(Collectors.toMap(Person::getName , (p) -> p));  
+	//修改为下面这句  
+	Map<String, Person> map2 = list.stream().collect(Collectors.toMap(Person::getName , (p) -> p,(k,v)->v));  其中(p) -> p可以用Function.identity()代替。
+
+
+22，java8流的分组：
+	Map<String, List<Coupon>> storeCouponList = couponList.stream().collect(Collectors.groupingBy(x -> x.getStore().getId()));
+
+
+23，枚举遍历的方式：
+	public enum EnumsTest {
+	UPDATE(1,"更新"),
+	LOGIN(2,"登陆"),
+	STOCK_IN(3,"库存领用"),
+	QUERY_ACCOUNT(4,"账户查询"),
+	PERSTORE(5,"预存"),
+	OPEN_CARD_APPLY(6,"开卡申请"),
+	OPEN_CARD(7,"开卡"),
+	YIJIETIAO_APPLY(8,"借条申请"),
+	ADDED_SERVICE_MAG(9,"增值服务管理"),
+	NEW_ACCOUNT(10,"新建账户");
+	
+	private Integer code;
+	private String type;
+	
+	private EnumsTest(Integer code,String type){
+		this.code=code;
+		this.type=type;
+	}
+
+	public Integer getCode() {
+		return code;
+	}
+
+	public void setCode(Integer code) {
+		this.code = code;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+	
+	 public static void main(String args[]){
+	     System.out.println("第一种通过反射");  
+	     Class<EnumsTest> clz=EnumsTest.class;  
+	     for(EnumsTest obj:clz.getEnumConstants()){  
+//	         System.out.println(obj.getType());
+	         System.out.println(obj);
+	     }  
+	     System.out.println("====================================");  
+	        for(EnumsTest rate:EnumsTest.values()){  
+	           System.out.println(rate.getType());  
+	        }  
+	     }  
+}
+
+24，double类型转成“%”：
+	Double rate =0.333787;
+	NumberFormat nf = java.text.NumberFormat.getPercentInstance(); 
+	nf.setMaximumIntegerDigits(2);//小数点前保留几位
+	nf.setMinimumFractionDigits(2);//
+	String rates = nf.format(rate);
+	System.out.println(rates);
+
+25，double类型保留两位小数：
+	方式一：
+	java.text.DecimalFormat df =new java.text.DecimalFormat("#.00");
+	df.format(你要格式化的数字);
+	例：new java.text.DecimalFormat("0.00").format(3.)   //也可以用#.00 区别是“#.00”前面没有则为空，“0.00”小数点前面没有则补0。
+	#.00 表示两位小数 #.0000四位小数 以此类推
+	
+	方式二：
+	double d = 3.;
+	String result = String .format("%.2f");
+	%.2f %. 表示 小数点前任意位数 2 表示两位小数 格式后的结果为f 表示浮点型
+	
+	方式三：
+	NumberFormat ddf1=NumberFormat.getNumberInstance() ;
+	void setMaximumFractionDigits(int digits)
+	digits 显示的数字位数
+	为格式化对象设定小数点后的显示的最多位,显示的最后位是舍入的
+
+
+26，mysql给查询结果添加序列号：
+	select (@i:=@i+1) i, post post,sex sex from ccf_salesman,(select @i:=0) as i;
+	SELECT (@i:=@i+1) i,user_id,user_name FROM `dt_user_all_orders`, (SELECT @i:=0) as i WHERE user_name='qqqqqqqqqq' LIMIT 0,10;
+
+	//(SELECT @i:=0) as i 要放在where的前面。
+
+
+	localhost:8081/salesmonth/export
+
+
+27，ajax请求导出excel的问题：
+	function exportExcel() {
+		// $.get("/salesmonth/export.html");
+		window.location.href = "/salesmonth/export";  //使用这种
+	}
+
+	导出excel算是文件下载了，后台需要向前台（浏览器）写文件流，而ajax请求获取的数据的都是字符串（此点当时在调试页面的时候，Response响应中满是乱码的字符串文本），
+	它没法解决后台返回的文件流，但是浏览器可以。
+
+
+28，当前端返回的参数含有%好特殊字符时，要进行处理：
+	var text = '';
+        $("#tr").children("th").each(function () {
+            text += $(this).text() + ",";
+        });
+        text = text.replace(/\%/g,'%25');  //替换所有的%为%25

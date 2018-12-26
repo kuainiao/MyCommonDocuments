@@ -1,0 +1,18 @@
+1，<package name="xxx" namespace="/test" extends="struts-default">
+	<!-- 只要这里有class属性，其所对应的类就由struts2创建，如果由spring创建action，class的值使用spring里的bean的id -->
+	<!-- 此时的class的值称为伪类 -->
+	<action name="register" class="registerAction">
+		<result>/welcome.jsp</result>
+	</action>
+</package>
+
+2,<!-- 解决使用session.load()方法时could not initialize proxy - no Session的问题,spring.xml中名字为sessionFactory -->
+	<filter>
+		<filter-name>openSessionInView</filter-name>
+		<filter-class>org.springframework.orm.hibernate5.support.OpenSessionInViewFilter</filter-class>
+		<!-- 修改名字，把 sessionFactory改为mySessionFactory-->
+		<!-- <init-param>
+			<param-name>sessionFactoryBeanName</param-name>
+			<param-value>mySessionFactory</param-value>
+		</init-param> -->
+	</filter>

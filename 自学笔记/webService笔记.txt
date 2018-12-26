@@ -1,0 +1,28 @@
+1,webservice可以实现跨平台跨编程语言的异构系统之间的交互。
+
+2,WebService三要素：
+	1,SOAP：webservice的传输协议，即简单对象访问协议。Soap=http+xml
+	  特点：跨平台、跨语言、w3c指定的标准
+
+	2，WSDL：webservice的使用说明书
+
+	3，UDDI(了解)：统一描述、发现和集成协议是一个目录服务，存储了全球的webservice地址。
+
+
+4，public static void main(String[] args) {
+	//1,创建一个工厂类
+	JaxWsServerFactoryBean factory = new JaxWsServerFactoryBean();
+	
+	//2,设置服务的地址
+	factory.setAddress("http://localhost:12345/weather"); //端口号12345，写 一个没有被占用的端口号。
+	
+	//3,设置背后工作的实现类(设置服务类)
+	factory.setServiceBean(new WeatherServiceImpl());
+	
+	//4,,创建webService服务
+	factory.create();
+	
+	//5，上面创建好后，浏览器输入http://localhost:12345/weather?wsdl，就可以访问。
+}
+	wsdl生成的说明书不方便阅读，可以使用jdk的wsimport命令：
+	E:\前端文件\webService\02-webservice\src>wsimport -s . http://localhost:12345/weather?wsdl    .表示当前目录，生成的文件会放在(E:\前端文件\webService\02-webservice\src下)。

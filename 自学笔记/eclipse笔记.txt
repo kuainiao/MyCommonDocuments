@@ -1,0 +1,69 @@
+1，eclipse常用快捷键：
+	CTRL+1 报错时用
+	ALT+A 选择实现的类 a 字母下有下划线，可以配合ALT使用。
+	CTRL+/	自动注释 //
+	按住CTRL键光标一定到指定的类，如果出现下划线，则表示该类存在。
+	按住CTRL键不放，再按K键，就可以找到名字一样的词。
+	f11 进入Debug模式
+	进入Debug模式的相关快捷键：f5 进入方法  f6一步一步的执行
+				   f8 跳转到新断点或方法
+
+	如何查看外部包的源码：点中引用的包右键Properties,在弹出的对话框中选择"Java Source Attchment"，去添加该包源码所在的路径。
+
+	CTRL+1有个renam可以快速改多个名字。
+
+	f3键快速打开一个类的源码。
+
+	CTRL+ f11:运行的快捷键
+
+	字母有下划线的：可以直接alt+下划线的字母，直接选到该出。菜单中的下划线直接按下划线的字母。
+
+	CTRL+M：窗口的最大化与还原。
+	ALT+Enter：快速打开属性
+	Alt+Shift+R：给文件里的某个词改名（其他与之相同的词都会改变）。
+	Crtl+Pgun/Pgdon：快速切换窗口里的其他文件
+	Ctrl+E:打开其他未显示的文件
+
+	编写代码的常用快捷键：
+	Ctrl+Alt+向上或向下方向键：快速复制上一行代码。
+	CTRL+D:删除选择行光标所在行
+	End键：光标移到末尾   Shift+End：选中光标位置到末尾
+	Home键：光标移到前面
+	Shift+回车键(Enter)：在两行之间插入空白行
+	Ctrl+Shift+/：块注释
+	Ctrl+Shift+\：取消块注释
+	Ctrl+Shift+C: <%----%>注释
+	Alt+Shift+Z：Try..catch异常多个代码块。
+	Alt+Shift+Z: 弹出的菜单，可以执行其他的语句块，例如：if语句
+
+	Alt+Shift+M：抽取方法，把某些常用的代码块封装成方法。
+	Alt+Shift+L：抽取变量
+	Alt+?+向上方向键：打印选中的变量。
+
+	查看源码：
+	Ctrl+Shift+T：查看某类的源码快捷键
+	打开源码后按Ctrl+T：查看其父类
+	Ctrl+O：查看该类的结构
+	选中某类按f3快速打开其源码
+	Alt+向左方向键：快速返回上次光标停留的位置。
+	
+	在XML文件中把光标移到某个元素，按F2即可查看其包含子元素。
+	SHIFT + TAB：往回缩进
+	CTRL+SHIFT+O 导包
+
+2，eclipse重构(refactor):封装冗余的代码，便于后期维护。
+	步骤：选中要重构的代码，右键选择refactor -> extract Method(提取方法)
+
+
+3,通过classpath找到文件路径。
+  InputStream inStream = DaoFactory.class.getClassLoader().getResourceAsStream("daoconfig.properties");
+
+
+4,修改web文件的字符编码时，只要修改jsp的就行，html，css默认是utf-8。
+
+
+5，select working set：当项目过多时，使用该功能可以给项目分组，易于管理。
+
+
+6，注意在使用MyEclipse创建工程时会生成一个2.4G的大文件在：E:\前端文件\MyBatis3\.metadata\.plugins\org.eclipse.m2e.core\nexus
+

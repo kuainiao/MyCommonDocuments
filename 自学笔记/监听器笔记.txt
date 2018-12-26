@@ -1,0 +1,20 @@
+1，监听器是一种设计模式，是观察者设计模式的一种实现。
+
+
+2，接口里的方法、成员变量默认是public abstract
+
+
+3,Servlet规范中定义好了八个监听器接口，它们要监听的对象分别是：request,session,servletContext。
+
+
+4，在JavaWeb项目中使用监听器，需要在web.xml文件中对监听器进行注册：
+	例如：
+	<listener>
+		<listener-class>com.abc.listener.MyRequestListener</listener-class>
+	</listener>
+
+
+5，HttpSessionBindingListener是不需要注册的。
+
+6，活化：硬盘中的数据恢复到内存
+   钝化：内存中的数据写入到硬盘	

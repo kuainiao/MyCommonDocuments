@@ -1,0 +1,518 @@
+1，Linux快捷键：
+	切换鼠标、键盘：Ctrl+Alt
+
+2，Linux目录：
+	“/”：系统跟目录，相当于window系统的“我的电脑”。
+	“/etc”：系统配置文件存放的目录，不建议在此目录下存放可执行文件。配置文件有：防火墙文件，网络设置文件，JDK环境配置文件，mysql等。
+	“/usr”：存放应用程序目录，例如：jdk、tomcat、redis、nginx等。
+	“/root”：系统管理员root的家目录，相当于windows系统的桌面，linux的命令行模式中。linux登录成功默认在root目录。也用“~”表示
+
+	
+3,CRT快捷键：
+	ALT+P：上传文件，直接把要上传的文件拖到窗口即可。所有上传文件被放在root目录中
+
+
+4,linux常用命令：
+	4.1，磁盘管理命令-ls命令：查看当前目录有哪些文件及子文件夹
+	  命令可以加参数，格式是命令+空格+“-”参数。例如查看当前目录的所有文件(包括隐藏文件)：ls -a，结果如下(取其中的一部分)：
+		.bash_logout 带“.”表示隐藏文件或文件夹
+		ls -l：查询文件的详细列表（不包含隐藏文件），ls -l 可以简写为ll
+		ls -al与ls -la效果一样：可以查询到隐藏文件或文件夹的详细列表，这说明linux命令参数，一般是无序的。特殊情况除外。
+		-h 友好展示信息：，例如：ll -h。
+		想要查看/etc目录下的内容：ll -h /etc  注意空格，所以查看某个目录下的内容命令为：ls 目录名。
+		drwxr-xr-x. 前面为“d”表示文件夹
+		-rw-r-----. 前面为“-”表示普通文件
+		lrwxrwxrwx. 前面为“l”表示链接文件，可以理解为windows系统的桌面上的快捷图标。
+
+
+	4.2，cd命令：
+	cd ../	向上一层目录
+	cd /	切换到linux的根目录
+	cd /目录表 切换到指定目录中
+	linux的绝对路径：/目录名，在任意目录都可以随意切换
+	linux的相对路径：例如：cd x1/x2 在当前目录中寻找子目录x1，在x1中寻找子目录x2。必须确定当前目录下有x1。
+	cd ~	切换到当前用户的家目录，称为回家。
+	cd -	切换到上一次的访问上目录，只能两个目录切换。
+
+	4.3，pwd命令：显示当前的所在目录，返回绝对路径。
+
+	4.4，mkdir命令：创建目录。语法：mkdir 文件夹名称
+	练习：需要在/root/t1目录下创建一个t2目录。
+	mkdir t1/t2(相对)，也可以用mkdir /root/t1/t2(绝对) 注意：如果父目录t1不存在，这样是无法创建的。
+	创建完成后使用ll t1 查看t1下的子目录。
+
+	当父目录不存在时，创建子目录：mkdir -p t3/t4，如果t3存在，也可以使用
+
+	4.5，删除空目录，例如删除空目录rmdir t5
+	
+	----------------以上都为磁盘管理命令------------------
+
+	--------------------文件浏览命令---------------------
+	4.6，cat ，适合查看少量信息的文件。格式：cat 文件名
+
+	4.7，more，文件名：分页查看文件内容。格式：more 文件名
+		more的一些操作：
+		Enter键	向下n行，需要定义。默认为1行
+		空格键	向下滚动一屏 或 Ctrl+F
+		B键	返回上一屏或Ctrl+B
+		q	退出more
+		G	跳到文件的末尾
+		gg	跳到文件开头
+	4.8，less：分页面试文件内容，操作更详细。语法：less[参数] 文件
+		参数：
+		-m	显示类似more命令的百分百
+		-N	显示每行的行号，注意N必须为大写
+		一般这样用：less -mN 文件名
+		操作：
+		空格键：前进一页或page down
+		b:	后退一页或page up
+		d:	前进半页
+		u:	后退半页
+		回车键：前进一行或方向键向下
+		q	退出less
+
+
+	4.9 tail -数字 文件名：可以快速查看文件后X行的内容。例如：tail -10 文件名 查看文件的后10行内容
+
+	上面的常用 less和tail命令
+
+	--------------文件操作命令------------------
+	5.0，cp：文件复制或目录  语法：cp 需要复制的文件 复制的位置。例如： cp Linux笔记.txt t1（相对目录的做法）   注意：这里的t1的位置是/root目录下，Linux笔记.txt的位置也是/root目录下。
+		cp /root/Linux笔记.txt /root/t1(绝对目录的做法)。cp /root/Linux笔记.txt /root/t3/ddd.txt（改名为ddd.txt）。
+		复制目录需要加参数-r 表示递归处理，将指定目录下的文件与子目录一并处理。例如：cp -r t5 t1(相对路径写法)   cp -r /root/t5 /root/t1(绝对路径写法)
+
+
+	5.1，mv命令：mv 需要移动的文件或目录 移动的位置。例如：mv t5 t3 把t5目录移动到t3
+		参数：-f 若目标文件或目录与现有的文件或目录重复，则直接覆盖现有的文件或目录。例如：mv -f t5 t3。
+		给文件改名：mv 账号.txt hehe.txt
+
+	5.2,rm命令：
+		删除文件：rm 文件名  可加参数-f 删除时不询问：rm -f hehe.txt
+
+		删除目录：rm 目录名  需要加参数-rf(不管是不是空目录都可以强制删除)   例如：rm -rf t5。
+		          区别：rm -rf * 删除当前目录下所有内容。rm -rf /*(慎用) 删除Linux系统根目录下所有内容
+
+
+	5.3，find命令：查找文件或目录
+		find /root -name 'ins*'  表示查找到/root目录下以ins打头的文件或目录
+
+
+	------------文档编辑命令--------------------
+	5.4，vim命令(相当于windows系统的记事本的功能)：
+		vim 文件名 进入编辑的一般模式（可以浏览文件内容，可以进行文本快捷操作，单行、多行的复制以及删除）。我们一般使用该命令进行文件的浏览
+		vim 文件名 在按i或a或者o键可以进入插入模式（可以编辑文件内容），编辑完成后如何保存？进入底行模式，要先按esc切换回一般模式，一般模式按“:”键(shift+;)切换到底行模式。
+		底行模式：q! 不保存强制退出。	wq 保存并退出
+		
+		vim 文件名后，按“Shift+;”键进入底行模式后再按“/”键输入查找的内容，可进行查找。
+
+
+	--------------管道命令------------------------
+	5.5，grep和管道：“|”表示链接的管道  命令1 | 命令2 | 命令3   grep正则表达式 格式：grep 需要搜索的字符串 搜索的文件。
+	     例如 grep 12 账号.txt 表示搜索文件“账号.txt”中的关键字12，返回关键字的所在行。
+	     ll | grep ins  表示先ll查询到当前目录或文件然后再grep（筛选）含有ins的目录或文件。
+	     grep -i 需要搜索的字符串 搜索的文件   表示忽略大小写查找数据 例如：ll | grep -i ins
+
+
+	---------------压缩解压命令-----------------------
+	5.6，压缩解压命令：
+		*.tar	打包，大小不会进行压缩
+		*.tar.gz    打包并压缩文件大小
+
+		
+		压缩：tar -zcvf 压缩包名字.tar.gz 需要压缩的内容 注意参数顺序不能变。 例如 tar -zcvf hehe.tar.gz *  表示将当前目录下所有内容进行打包压缩，文件名为hehe.tar.gz。
+		解压：tar -zxvf(顺序不变) 压缩包名  例如：tar -zxvf hehe.tar.gz 解压到的是当前目录中。
+		      tar -zxvf 压缩包名 -C 指定压缩路径。例如：tar -zxvf hehe.tar.gz -C /root/t5/t5
+		      
+
+	----------------系统命令--------------------------------
+	5.7，ps命令：
+		参数：-e 显示所有程序
+		      -f 显示UID、PPIP、C与STIME栏位。
+
+	    查看系统进程：  ps -ef
+	    UID表示该进程属于哪个用户，该用户对进程有创建和杀死的权利。PID：进程的id，用来杀死进程的。CMD：进程对应的程序，程序的位置。
+	    与管道的联合使用：例如，ps -ef | grep -i vim
+
+	5.8,kill命令：
+		强制杀死某个进程： kill -9 pid号
+
+	5.9,ifconfig：显示网路设备
+
+	6.0，测试和目标的连通性：ping ip地址  按ctrl+c键关闭测试
+
+	6.1，重启、关机命令：reboot 重启  halt 关机命令
+
+	6.2,setup：网络配置。建议使用CRT运行，会有中文界面。
+
+	6.3，文件权限命令：
+		文件的权限：drwxr-xr-x  一共10个位置，第一个位置表示类型，往下每3个部分是一个权限，分别是所属用户权限、所属组权限、其他用户权限。
+			    r：read 读取权限。w：write 写入权限。x：execute 执行权限。-表示没有权限。
+			    所属用户权限：文件属于哪个用户。 u
+			    所属组权限：所属用户所在组别。   g
+			    其他用户权限：文件不属于该用户，不属于该用户所在组。o
+
+	6.4，更改文件权限：
+		语法：chmod 权限设置 需要更改权限的文件名。例如：chmod u=rwx Linux笔记.txt。chmod g=rx Linux笔记.txt  没有的权利不能输入-
+		修改所有用户的权限：chmod a=r Linux笔记.txt  a表示所有，即all。
+
+	6.5，更改文件夹权限：
+		同更改文件权限一样，增加一个参数-R  注意是大写。例如：chmod -R u=r t1  修改文件夹t1所属用户的权限为r，包括文件夹里的文件或文件夹的所属用户权限都被修改为r。
+	
+	6.6，rpm -qa：查询Linux系统中所有的安装包。
+	    java -version 查看java环境
+	    本地程序安装：rpm -ivh 程序名
+	    本地程序卸载：rpm -e --nodeps 程序名   例如：rpm -e --nodeps java-1.7.0-openjdk-1.7.0.45-2.4.3.3.el6.x86_64
+
+
+	6.7，yum命令：相当于可以联网的rpm命令
+		      相当于先联网下载安装程序包、程序的跟新包
+		      自动执行rpm命令
+	
+	6.8,getconf LONG_BIT：查看Linux是多少位32或64
+
+5，JDK的安装：
+	1,创建JDK安装路径：mkdir -p /usr/local/java
+	2,ALT+P打开上传窗口，把下载好的JDK压缩包移到上传窗口。上传好的东西是放在roo目录下的。
+	3，解压：tar -zxvf jdk-7u55-linux-i586.tar.gz -C /usr/local/java
+	4，配置环境变量：在/etc/profile目录下配置环境，vim /etc/profile 按i键进入插入模式进行编辑，复制如下代码：
+		#set java environment    #表示注释
+		JAVA_HOME=/usr/local/java/jdk1.7.0_80
+		CLASSPATH=.:$JAVA_HOME/lib.tools.jar
+		PATH=$JAVA_HOME/bin:$PATH
+		export JAVA_HOME CLASSPATH PATH
+
+	5，配置完毕，要重新加载：source /etc/profile
+
+	  当使用java -version时可能出现的一个问题：bash: /usr/bin/java: /lib/ld-linux.so.2: bad ELF interpreter: 没有那个文件或目录
+	  解决方法：输入命令：sudo yum install glibc.i686
+
+
+6，安装mysql： whereis mysql 查询mysql安装在哪
+	1，下载好MySQL-client-5.5.60-1.el6.x86_64.rpm、MySQL-server-5.5.60-1.el6.x86_64.rpm包，上传至linux中
+	2，安装依赖：yum -y install libaio.so.1 libgcc_s.so libstdc++.so.6   
+		     yum update libstdc++-4.4.7-4.el6.x86_64
+
+	3,安装mysql的服务：rpm -ivh MySQL-server-5.5.60-1.el6.x86_64.rpm
+	4,安装客服端：rpm -ivh MySQL-client-5.5.60-1.el6.x86_64.rpm
+	5，启动mysql服务：service mysql start  设置初始化密码：/usr/bin/mysqladmin -u root password '252513'
+	    登录mysql：mysql -u root -p252513
+	    如果没有配置，那么每次启动都要输入service mysql start，如何解决？
+	    加入到系统服务中：
+	    chkconfig --add mysql
+	    自动启动：chkconfig mysql on  这样每次开机mysql都会自动启动
+	    
+	    关闭自动启动：chkconfig mysql off（这句不用）
+
+
+	6，使用远程登录mysql：windows上的mysql链接linux上的mysql
+		步骤：1，先在linux上登录mysql，在sql中执行grant all privileges on *.* to 'root' @'%' identified by '252513'; 然后刷新权限：flush privileges
+			  这样还是链接不上mysql。
+		      2，设置linux防火墙：linux防火墙会默认拦截3306端口。在linux中执行/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT  
+			  再执行 /etc/rc.d/init.d/iptables save
+
+		     这样就可以使用windows上的mysql软件链接上Linux上的mysql数据库了。
+
+
+7,安装tomcat：
+	1，上传tomcat的压缩包到linux中
+	2，创建好解压路径：mkdir -p /usr/local/tomcat
+	3,解压到指定目录：tar -zxvf apache-tomcat-7.0.86.tar.gz -C /usr/local/tomcat
+	4,启动tomcat：./startup.sh   “./”表示当前目录
+	5，设置防火墙：开放8080端口
+		/sbin/iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+		保存配置：/etc/rc.d/init.d/iptables save
+
+		这样就可以在浏览器上访问到tomcat了。
+
+	6,关闭服务器：./shutdown.sh
+
+
+8，发布项目到linux上：
+	在linux上链接mysql： mysql -uroot -p252513。
+	1，将项目打成war包：在tomcat/webapps目录下，只要tomcat启动war包会自动解压。
+	2，将war包上传到linux的root下
+	3，将war包移动到tomcat/webapps下即可
+	
+	注意：打成war包的项目的jdk要与linux的jdk版本一致或高于linux的jdk的版本。
+
+9，nginx：
+	nginx特点：反向代理、负载均衡(http服务的负载均衡)、动态分离(静态资源放到nginx，动态资源放入到服务器端)
+
+	nginx的默认端口号：80  在浏览器的地址栏这样输入：httlp://127.0.0.1  就能访问到nginx
+	在nginx的安装目录找到E:\Tools\nginx\nginx-1.14.0\conf -> nginx.conf文件43行中设置如下：
+	location / {
+            root   html;
+            index  index.html index.htm;
+	    proxy_pass http://localhost:8080;  //注意这里，为新添加的内容。
+        }
+	然后重启nginx(在任务管理器结束nginx进程，然后重新打开即可)
+	然后在地址栏中这样输入：httlp://127.0.0.1/test(原本访问的项目是http://127.0.0.1:8080/test才能访问到)就能访问到。
+
+	nginx代理集群：
+	在nginx.conf文件中34行设置如下：
+	upstream server_yujia{   //server_yujia是随便起的名字
+	server 127.0.0.1:8080;   
+	}
+	在设置了server 127.0.0.1:8080后;127.0.0.1:8080就与上面的proxy_pass http://localhost:8080;一样了，所以把其修改成为：
+	    location / {
+		    root   html;
+		    index  index.html index.htm;
+		    #proxy_pass http://localhost:8080;   //#表示注释
+		    proxy_pass http://server_yujia;  //使用所起的名字
+		}
+
+	   在地址栏中这样输入：httlp://127.0.0.1/test一样能访问到。
+
+	   代理多台：
+	    upstream server_yujia{
+		server 127.0.0.1:8080;
+		server 127.0.0.1:8090;
+	    }
+	
+		
+	设置权重：
+	 upstream server_yujia{
+		server 127.0.0.1:8080 weight=2;
+		server 127.0.0.1:8090 weight=4;  权重越大访问的次数越多（即访问其的可能性要大）
+	    }
+
+	 产生的问题：前后两次访问有可能访问到不同的服务器，导致session不同。我们要保证session相同
+	 解决方式1(只能在Windows下使用)：
+		web服务器解决(广播机制)
+		注意：tomcat下性能低
+		修改俩个地方：
+		   1，修改tomcat的server.xml文件，支持共享：把111行的注释放开
+		    <Cluster className="org.apache.catalina.ha.tcp.SimpleTcpCluster"/>  Cluster是集群的意思。
+		   2，在项目的web.xml文件中添加一个标签即可：
+		   <distributable/>
+	 解决方式2：
+	        可以将session的id放入redis中
+
+         解决方式3：保证一个ip地址永远访问的是一台计算机(方式1就不需要了)，linux常用这种方案
+		在nginx的配置文件nginx.conf中添加 ip_hash，就能保证一个ip地址永远访问的是一台服务器。
+		upstream server_yujia{
+			server 127.0.0.1:8080;
+			server 127.0.0.1:8090;
+			ip_hash;
+		    }
+
+10，在linux上安装nginx：
+	如果没有安装c编译器，要先安装c编译器：yum -y install gcc gcc-c++ autoconf automake make
+	1，yum install -y pcre pcre-devel
+	2，yum install -y zlib zlib-devel
+	3，yum install -y openssl openssl-devel
+	4，wget -c https://nginx.org/download/nginx-1.10.1.tar.gz  (下载)
+	5，解压tar -zxvf nginx-1.10.1.tar.gz -C /usr/local/nginx
+	6，进入nginx的目录执行./configure  (使用默认配置)
+	8，编译安装：
+		1、make
+		2、make install
+	9，启动ngninx:
+		cd /usr/local/nginx/sbin/
+		启动nginx：./nginx
+		
+		扩展nginx的关闭：./nginx -s quit:此方式停止步骤是待nginx进程处理任务完毕进行停止。
+	
+				 ./nginx -s stop:此方式相当于先查出nginx进程id再使用kill命令强制杀掉进程。
+	
+	10，将端口80放行：
+		/sbin/iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+		保存配置：/etc/rc.d/init.d/iptables save
+
+	11，修改配置文件：
+		当ngin x的配置文件nginx.conf修改后，要想让配置生效需要重启 nginx，使用-s reload不用先停止nginx再启动nginx，即可将配置信息在 nginx 中生效，如下：
+		./nginx -s reload
+
+              linux补充命令：jar -zxvf test.war -C 目录名  解压war包
+	
+	
+	
+	一个例子：
+	     mkdir -p /usr/local/nginx
+	     tar -zxvf nginx-1.8.0.tar.gz -C /usr/local/nginx
+
+	 ./configure \
+	 --prefix=/usr/local/nginx \
+	--pid-path=/var/run/nginx/nginx.pid \
+	--lock-path=/var/lock/nginx.lock \
+	--error-log-path=/var/log/nginx/error.log \
+	--http-log-path=/var/log/nginx/access.log \
+	--with-http_gzip_static_module \
+	--http-client-body-temp-path=/var/temp/nginx/client \
+	--http-proxy-temp-path=/var/temp/nginx/proxy \
+	--http-fastcgi-temp-path=/var/temp/nginx/fastcgi \
+	--http-uwsgi-temp-path=/var/temp/nginx/uwsgi \
+	--http-scgi-temp-path=/var/temp/nginx/scgi
+
+
+
+11，linux安装ftp服务：参见E:\Java视频资料\淘淘商城项目\03.第三天（实现商品添加）\参考资料\vsftpd安装手册.doc
+	浏览器访问：例如：ftp://192.168.189.129/www/images/星空.jpg  ftp是本地访问，并不是外网访问(外网是http)
+	 或者：ftp://ftpuser:25251325@192.168.189.129
+
+	systemctl disable firewalld
+
+
+
+12，Linux下安装solr：solr需要安装JDK，因为solr要运行在web容器中。
+	1，上传压缩包到linxu
+	2，解压：tar -zxvf solr-4.10.3.tgz.tgz
+	3，把/root/solr-4.10.3/dist下的solr-4.10.3.war部署到tomcat，为了方便起见我们修改一下该war包的名称为solr.war
+	   cp solr-4.10.3.war /usr/local/tomcat/apache-tomcat-7.0.47/webapps/solr.war
+	4，解压该war包：只要启动tomcat就会自动解压。启动命令：./startup.sh
+	5，关掉tomcat并删掉solr.war   删除命令：rm -f solr.war
+	6，把/root/solr-4.10.3/example/lib/ext下的jar拷贝到刚刚发布到tomcat的solr工程中：
+	    命令：cp * /usr/local/tomcat/apache-tomcat-7.0.47/webapps/solr/WEB-INF/lib/
+
+	7，创建solrhome，solrhome是存放solr服务器所有配置文件的目录。把/root/solr-4.10.3/example下solr文件夹复制到/usr/local/solr/solrhome(这个位置是任意的)下：
+	    cp -r solr /usr/local/solr/solrhome
+
+	8，告诉solr服务器solrhome的位置：需要修改solr工程的web.xml文件(在/usr/local/tomcat/apache-tomcat-7.0.47/webapps/solr/WEB-INF下)：
+		在41行去掉注释：
+		<env-entry>
+		       <env-entry-name>solr/home</env-entry-name>    //solr/home是固定的
+		       <env-entry-value>/usr/local/solr/solrhome</env-entry-value>   //修改这里
+		       <env-entry-type>java.lang.String</env-entry-type>
+	       </env-entry>
+
+
+	 9，启动tomcat
+  
+
+  13，solr的使用：
+	1,配置中文分析器：把IKAnalyzer2012FF_u1.jar添加到solr工程中：
+	   cp IKAnalyzer2012FF_u1.jar /usr/local/tomcat/apache-tomcat-7.0.47/webapps/solr/WEB-INF/lib/
+
+	2,把分词器自带的xml、ext.dic、stopword.dic文件放在solr的工程的classpth下(即在WEB-INF下建立一个classes文件夹)。
+	   cp IKAnalyzer.cfg.xml ext_stopword.dic mydict.dic /usr/local/tomcat/apache-tomcat-7.0.47/webapps/solr/WEB-INF/classes/
+	   注意：mydict.dic和ext_stopword.dic的字符集编码必须是utf-8，即不能使用windows记事本编辑。
+
+	3，配置fileType：需要在solrhome/collection1/conf/schema.xml中配置：
+		例如：
+		<fieldType name="text_ik" class="solr.TextField"> 
+			<analyzer  class="org.wltea.analyzer.lucene.IKAnalyzer"/> 
+		</fieldType>
+		<field name="item_title" type="text_ik" indexed="true" stored="true"/>
+		<field name="item_sell_point" type="text_ik" indexed="true" stored="true"/>
+		<field name="item_price"  type="long" indexed="true" stored="true"/>
+		<field name="item_image" type="string" indexed="false" stored="true" />
+		<field name="item_category_name" type="string" indexed="true" stored="true" />
+		<field name="item_desc" type="text_ik" indexed="true" stored="false" />
+
+		<field name="item_keywords" type="text_ik" indexed="true" stored="false" multiValued="true"/>
+		<copyField source="item_title" dest="item_keywords"/>
+		<copyField source="item_sell_point" dest="item_keywords"/>
+		<copyField source="item_category_name" dest="item_keywords"/>
+		<copyField source="item_desc" dest="item_keywords"/>
+	
+	4，重启tomcat
+	
+
+14，solr索引库的维护： 
+    在solr的页面找到Documents
+    1，添加：选择JSON格式：在这里{"id":"change.me","title":"change.me"}添加即可。
+    2，修改：只添加一个新的文档即可，要求文档id和被修改文档的id一致即可，原理是先删除后添加
+    3，删除：选择xml格式，
+       有两种方法：
+       1，根据id删除：
+        <delete>
+	<id>test001</id>  //添加时的id
+	</delete>
+	<commit/>  //提交
+
+
+	2，根据查询删除：
+	<delete>
+	<query>*:*</query>  //这里写查询语法
+	</delete>
+	<commit/>
+
+
+
+15，linux开启虚拟主机：
+	1，cd /etc/sysconfig/network-scripts/ifcfg-ens33 直接在ifcfg-ens33中添加：IPADDR1=192.168.189.130、IPADDR2=192.168.189.131
+	2，重启网卡：systemctl restart network
+
+	
+	nginx中基于IP配置多个：
+	server {
+		listen       81;
+		server_name  192.168.189.130;
+
+		#charset koi8-r;
+
+		#access_log  logs/host.access.log  main;
+
+		location / {
+		    root   html-130;   //注意这里要复制一个html并命名为html-130
+		    index  index.html index.htm;
+		}
+       }
+
+       server {
+		listen       81;
+		server_name  192.168.189.129;
+
+		#charset koi8-r;
+
+		#access_log  logs/host.access.log  main;
+
+		location / {
+		    root   html-129;   //注意这里要复制一个html并命名为html-129
+		    index  index.html index.htm;
+		}
+       }
+
+       基于端口号：修改不同的端口号即可
+
+       基于域名的虚拟主机配置方式：一个域名只能绑定ip地址，一个ip地址可以绑定多个域名
+
+	修改c:\Windows\System32\drivers\etc下的hosts文件
+
+
+16，linux安装zookerper及搭建zookeeper集群：
+	1，上传安装包到linux
+	2，解压
+	3，将解压后的文件夹复制到/usr/local/solrcolud
+	4，在zookeeper文件夹下创建data目录
+        5，在data文件夹下创建一个文件myid内容为1：echo 1 >> myid
+	6，把zookeeper的conf目录下的zoo_sample.cfg文件复制一份该名为zoo.cfg
+	7，修改zoo.cfg：dataDir=/usr/local/solrcloud/zookeeper1/data，添加：
+		server.1=192.168.189.129:2881:3881
+		server.2=192.168.189.129:2882:3882
+		server.3=192.168.189.129:2883:3883
+
+		三个zookeeper都要配，注意端口号要不相同
+
+	8，启动zookeeper：进入bin目录：./zkServer.sh start    关闭命令：./zkServer.sh stop   查看状态：./zkServer.sh status
+
+
+
+17，查看tomcat的状态： tail -f /usr/local/solrcloud/tomcat1/logs/catalina.out 
+
+18，solr集群的搭建：
+	1，把solrhome中的配置文件上传到zookeeper集群：使用zookeeper的客户端上传(在/root/solr-4.10.3/example/scripts/cloud-scripts下的zkcli.sh)
+		命令：./zkcli.sh -zkhost 192.168.189.129:2181,192.168.189.129:2182,192.168.189.129:2183 -cmd upconfig -confdir /usr/local/solrcloud/solrhome1/collection1/conf -confname myconf
+		       
+		 执行这个命令可能会报错：错误: 找不到或无法加载主类 org.apache.solr.cloud.ZkCLI
+		 解决方法：yum install -y unzip zip   在/root/solr-4.10.3/example目录下执行 java -jar start.jar 命令，再执行上面的命令。
+		
+	       执行：./zkCli.sh  再执行ls /、   ls /configs 、ls /configs/myconf就能看到我们上传好的配置文件。
+
+	 2，修改solrhome的配置文件(solr.xml在/usr/local/solrcloud/solrhome1下)：
+	    <solrcloud>  
+	    <str name="host">${host:192.168.189.129}</str>  //修改这里
+	    <int name="hostPort">${jetty.port:8086}</int>   //修改这里  solr所运行的服务器的端口号
+	    <str name="hostContext">${hostContext:solr}</str>
+	    <int name="zkClientTimeout">${zkClientTimeout:30000}</int>
+	    <bool name="genericCoreNodeNames">${genericCoreNodeNames:true}</bool>
+	  </solrcloud>
+
+	  3，修改每一台solr的tomcat 的 bin目录下catalina.sh文件中(239行)加入DzkHost指定zookeeper服务器地址： 
+		JAVA_OPTS="-DzkHost=192.168.189.129:2181,192.168.189.129:2182,192.168.189.129:2183"
+		（可以使用vim的查找功能查找到JAVA_OPTS的定义的位置，然后添加）
+	  4，重启tomcat
+	  5，创建有两片的collection,每片是一主一配。
+		使用以下命令创建(在浏览器地址栏执行)：http://192.168.189.129:8083/solr/admin/collections?action=CREATE&name=collection2&numShards=2&replicationFactor=2
+
+          6，删除collection1：http://192.168.189.129:8083/solr/admin/collections?action=DELETE&name=collection1

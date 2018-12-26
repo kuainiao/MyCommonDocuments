@@ -1,0 +1,5 @@
+1，elasticsearch
+
+2，springdata 的Redis
+
+3，RulesEnum枚举中写方法是什么意思？

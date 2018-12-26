@@ -1,0 +1,213 @@
+1,jQuery：是一个js的框架，也可以认为是一个js库，帮助我们封装了很多Javascript的方法，方便我们使用。
+
+2,DOM对象（文档对象模型）：指的是HTML页面的元素（标签），通过DOM对象可以使用Javascript中的一些属性和方法。
+
+3，jQuery对象：指的是通过jQuery创建出来的一些对象，通过jQuery对象可以使用jQuery Api中提供的一些方法。
+	注意：DOM对象和jQuery对象是不能互相调用的，例如DOM对象不能使用jQuery的方法，jQuery也不能使用Javascript中的
+	      方法和属性。
+
+4，jQuery的安装步骤：
+	1，下载相应的文件库
+	2，将jQuery文件拷贝到web的目录下
+	3，页面引入js文件(jQuery的js)
+	4，页面中载入jQuery
+
+5,jQuery的启动：
+	//启动jQuery的等效代码。$等价于jQuery,$其实就是jQuery库中定义的全局变量，用于表示jQuery这个对象。
+	$(function(){
+		alert("我的jQuety1");
+	});
+	jQuery(function(){
+		alert("我的jQuety2");
+	});
+
+
+6，jQuery对象其实是一个数组，这个数组存放的是DOM对象。
+
+7，选择器：
+	什么是选择器：选择器是获取页面元素的一种语法（工具），jQuery提供了丰富的元素选择器，可以方便的快捷得到页面中的元素对象。
+		      这些选择器的语法类似于css样式表的选择器。
+
+        id选择器：id是不能重复的，因此如果页面中有多个元素id相同，那么jQuery只会获取第一次出现的这个id作为jQuery对象。
+	<script type="text/javascript">
+	$(function(){
+		alert($("#name").length);  //1
+		alert($("#name").val()); //张三
+		
+	});
+	</script>
+	</head>
+	<body>
+		<input type="text" value="张三" id="name"><br/>
+		<input type="text" value="李四" id="name">
+	</body>
+	
+	class选择器：
+	获取出来的jquey对象是一个数组，如果直接使用jQuery那么jQuery会把数组中的第一个元素作为jQuery对象使用。
+	$(function(){
+		
+		alert($(".name").val()); //张三
+		
+	});
+	</script>
+	</head>
+	<body>
+	<input type="text" class="name" value="张三"><br/>
+	<input type="text" class="name" value="李四">
+	
+	alert($("div ~ .name").length); //表示的是div之后的所有的兄弟元素。
+	
+	//超链中没有value属性，但是却不影响jQuery属性选择器的使用，其他自定义的属性也是一样,虽然没有该属性，但是也可以取得到。
+	alert($("[value]").length);
+	<a value="lj"></a>
+8，Dom对象转jQuery对象
+	例子：alert($($(".name")[1]).val()); //此题包含jQuery对象转成Dom对象，然后Dom对象转换成jQuery对象。
+
+
+9,val()：获取表单元素的value属性，在html当中，只有表单元素有value属性。
+	val():其他标签的value属性不能获取，例如：<a value="lianjie" id="lj">链接</a> ,因为<a></a>标签根本没有value属性(会报错)，虽然可以这样写。
+	这也是val()与attr()的区别，attr()就可以获取上面<a></a>标签的属性。若结果是一个数组，使用val()获取的是第一个值。
+  往val()里添加参数：alert($("#name").val("李四"));
+
+10，html()与text()的区别：
+	alert($("#div2").html()); //获取id为div2这个元素的内容(包括页面中所有的html代码)
+	alert($("#div2").text()); //获取id为div2这个元素的内容(不包括页面中的html代码)
+	<div id="div2"><a href="#">你好</a></div>
+	
+	$("#div3").html('<a href="#">超链接</a>'); //注意：括起来的是单引号''
+
+11,addClass()和removeClass()
+	<style type="text/css">
+	.div1{
+		background-color: red;
+	}
+	</style>
+	$("#div1").addClass("div1");
+	<div id="div1">
+	$("#div1").removeClass("div1");
+
+
+12,attr()
+	alert($("#img").attr("src")); //获取src的值
+	alert("切换图片");
+	$("#img").attr("src","img/Sailboat.jpg"); //该表src的值
+
+	attr()也可以对class进行操作,例如：$("#div1").attr("class","div1");attr()是对整个属性进行操作，所以不要用attr()对class进行操作。
+	
+	对复选框的操作
+	$("#cd").attr("checked",true); //选中状态
+
+13,js中将字符串快速转换成数字类型
+	var v_num3=(v_num1*1)+(v_num2*1); //v_num1与v_num2都是字符串。
+
+14,表单提交的两种方式：
+ (1): submit按钮
+	$("#but").click(function(){
+		$("#sub").click();
+	});
+	
+	
+	<body>
+		<form action="aaa.jsp" id="form1">
+			姓名<input type="text"><br/>
+			<input type="submit" value="提交" id="sub"><input type="button" value="自定义提交按钮" id="but">
+		</form>
+	</body>
+
+
+(2): 表单的submit方法
+	$("#but").click(function(){
+		$("#form1").submit();
+	});
+	
+	<body>
+		<form action="aaa.jsp" id="form1">
+			姓名<input type="text"><br/>
+			<input type="submit" value="提交" id="sub"><input type="button" value="自定义提交按钮" id="but">
+		</form>
+	</body>
+
+
+15，让submit按钮不会提交表单：
+	$("#sub").click(function(){
+		alert("点击了提交按钮");
+		return false;
+		});
+	});
+	</script>
+	</head>
+	<body>
+	<form action="aaa.jsp" id="form1">
+	姓名<input type="text"><br/>
+	<input type="submit" value="提交" id="sub"><input type="button" value="自定义提交按钮" id="but">
+
+
+16,live()方法与bind()方法
+	live为现有的页面元素以及将来出现的页面元素绑定事件
+	bind为现有的页面元素绑定事件
+
+17,hover()方法：
+	//hover()方法
+	//参数1：鼠标移入后触发的方法
+	//参数2：鼠标移除后触发的方法
+	$("#img").hover(function(){
+		$(this).removeClass("img1");
+		//$(this).addClass("img2");
+	},function(){
+		//$(this).removeClass("img2");
+		$(this).addClass("img1");
+	});
+
+18，one()方法：只能点击一次
+	$(function(){
+		$("#butOne").one("click",function(){
+			alert("点击了一次按钮");
+		});
+	});
+	
+
+	自定义一个只能点击一次的方法，功能与one()方法一样。
+	$("#butOne2").bind("click",function(){
+		alert("点击了一次按钮");
+		$(this).unbind("click");
+	});
+
+
+19,hide()
+	$(function(){
+		$("#div").hide();
+	});
+	<div id="div">
+		东北往事破马张飞<br/>
+		生化危机6<br/>
+		黑夜传说5<br/>
+	</div>
+
+
+20,toggle()方法:每点击一次执行不同的方法
+	$("#but").toggle(function(){
+		$("#div").show();
+		},function(){
+		$("#div").hide();
+		});
+
+
+21，包装集
+	返回原包装集：add,not,filter
+	返回新包装集：slice,find,clone,next,nextAll,siblings,prev,prevAll,children,parent,pranets
+	返回前一个包装集：end
+	返回合并后的包装集：andSelf
+
+	add会添加新的元素到包装集，not和filter，slice，is是在当前包装集的基础上来进行过滤器和取消(特别注意：不是在包装集中，
+	如果某个包装集<div><sapn></span></div>，使用div.filter(sapn)是没有办法筛选sapn,因为div仅仅是一个单独的包装集。)
+
+	find，parent，children等就是在当前包装集的元素中去查找或者过滤值，而不是在包装集中过滤。
+
+	eq()，下标是从0开始。nth-child(),下标是从1开始。
+
+22，toggleClass()方法：判断是否有这个类，没有就添加该类，有就删除该类。
+
+
+23,在click(function(){
+	$(this).text();   this是DOM对象
+})

@@ -1,0 +1,497 @@
+1，ORM(Object Relational Mapping)：对象关系映射，用于实现面向对象编程语言里不同类型系统的数据之间的转换。
+
+2，配置文件(详见01-primary)：
+   mapper.xml(名字可以随便写，不过一般使用mapper，该文件要注册到mybatis.xml文件中),放在dao包中。mybatis.xml文件放在src下。
+   mapper.xml文件约束文件的位置：mybatis-3.3.0.jar -> org.apache.ibatis.builder.xml。引入dtd文件：
+   打开MyBatis文档(E:\Tools\MyBatis3\mybatis-3.3.0)，打开CTRL + F 查找mybatis-3-mapper.dtd,复制
+   <!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  到mapper.xml文件中。
+
+   同样的mybatis.xml复制如下代码的其中：
+   <!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+   "http://mybatis.org/dtd/mybatis-3-config.dtd"> \
+  
+   mybatis.xml：
+   <configuration>
+	<environments default="mysqlEM">  //mysqlEM是起的别名
+		<environment id="mysqlEM">
+			<transactionManager type="JDBC"></transactionManager>
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.jdbc.Driver"/>
+				<property name="url" value="jdbc:mysql://127.0.0.1:3366/test"/>   
+				<property name="username" value="root"/>
+				<property name="password" value="252513"/>
+			</dataSource>
+		</environment>
+	</environments>
+</configuration>
+
+注意：jdbc:mysql://127.0.0.1:3306/test  如果是这样可以简写成jdbc:mysql:///test，即当端口号为3306可以省略
+
+
+3,日志的配置文件log4j.properties放在src下
+   log4j.properties中：
+  把log4j.rootLogger=debug,console 修改成 log4j.logger.test=debug,console   就可以在控制台输出test相关的信息(其他多余的信息不显示,test是mapper.xml文件nameSpace属性的值)
+
+4，如果有多个映射文件nameSpace的值不要相同，如果多个映射文件的<insert id="insertStudent">中id相同，要在dao类中这样修改sqlSession.insert("test.insertStudent", student); 
+   或者修改id的值为不相同。
+
+
+5，把mybatis.xml文件中的properties放在另外一个properties文件中(详见03-primary-3)：
+	注册该配置文件
+	<properties resource="jdbc_mysql.properties"/>
+	
+	读取：
+	<dataSource type="POOLED">
+		<property name="driver" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url}"/>
+		<property name="username" value="${jdbc.user}"/>
+		<property name="password" value="${jdbc.password}"/>
+	</dataSource>
+
+
+6,dirty(脏)：数据和数据库的数据不一致
+
+
+7， <typeAliases>
+	<!-- <typeAlias type="com.bjpowernode.beans.Student" alias="student"/> -->  <!-- 给类起别名 -->
+	<package name="com.bjpowernode.beans"/>
+   </typeAliases>
+
+ 在mybatis.xml文件中按照上面设置后， mapper.xml文件中的<insert id="insertS" parameterType="student"> parameterType="student"就可以写成简单类名。
+
+
+ 8，crud(详见04-crud):
+	delete
+	<delete id="deleteStudentById">
+ 		delete from student where id=#{xxx} <!--这里的#{}仅仅是个占位符，里面放什么都可以  -->
+ 	</delete>
+
+	update:
+	<update id="updateStudent">
+ 		update student set name=#{name},age=#{age},score=#{score} where id=#{id}
+ 	</update>
+
+	模糊查询时用到concat()函数
+	<select id="selectStudentsByName" resultType="Student">
+ 		select id,name,age,score from student where name like concat('%',#{xxx},'%')  
+ 	</select>
+	其实也可以这样简写：
+	select id,name,age,score from student where name like  '%' #{xxx} '%'  //常用这种,里面可以随意写,#是动态参数
+	还可以这样写：
+	select id,name,age,score from student where name like  '%${value}%'  //不常用,这样写里面必须写value，这种执行效率低，有sql注入的风险。$是纯粹的字符串拼接。
+
+
+9，字段名与属性名不一致:
+	当字段名与属性名不一致时会返回null。
+	解决方法：
+	1，使用别名;
+	<select id="selectAllStudents" resultType="Student">
+ 		select tid id,tname name,tage age,score from student
+ 	</select>
+
+	2，通过resultMap解决不一致问题：
+	<resultMap type="Student" id="studentMapper">
+ 		<id column="tid" property="id"/>   //id比较特殊就用id,其他字段使用result
+ 		<result column="tname" property="name"/>
+ 		<result column="tage" property="age"/>
+ 	</resultMap>
+	select id="selectAllStudents" resultMap="studentMapper">
+ 		select tid,tname,tage,score from student
+ 	</select>
+
+
+10，Mapper动态代理（重点）（详见07-mapperDynamicProxy）：
+    实现Mapper动态代理要求：
+    1,映射文件sql语句的id和dao接口的方法名相同。
+    2,映射文件nameSpace与dao接口的全限定类名相同。
+
+
+11,多查询条件无法接受问题（详见08-selectByMap）：
+	#{}中可以放什么内容：
+	1，参数对象的属性
+	2，随意内容，此时的#{}是个占位符
+	3,参数为Map时的key
+	4，参数为Map时，若key所对应的value为对象，则可将该对象的属性放入
+	5，参数的索引号。
+
+
+12,动态sql：
+   在动态sql中出现> < & 等要替换
+   &	&amp; 
+   >	&gt;
+   >=   &gt:=
+
+  if标签：
+   select id="selectStudentByCondition" resultType="Student">
+ 	select id,name,age,score 
+ 	from student where 1 =1
+ 	<if test="name != null and name != ''"> <!--传过来的参数的属性可以直接写到这  -->
+ 		 and name like '%' #{name} '%'
+ 	</if>
+ 	<if test="age > 0"> <!--不满足条件就不会执行and age > #{age}  -->
+ 		and age > #{age}
+ 	</if>
+ </select>
+
+where标签：
+ <select id="selectStudentByWhere" resultType="Student">
+ 	select id,name,age,score 
+ 	from student
+ 	<where>
+	 <if test="name != null and name != ''"> <!--传过来的参数的属性可以直接写到这 if每个条件都会判断，注意与when的区别 -->
+	 	 and name like '%' #{name} '%'
+	 </if>
+	 <if test="age > 0"> <!--不满足条件就不会执行and age > #{age}  -->
+	 	and age > #{age}  // if会自动把and去掉，但是不会添加，最好都写上and
+	 </if>
+ 	</where>
+ </select>
+ 
+choose标签：
+ <select id="selectStudentByChoose" resultType="Student">
+ 	select id,name,age,score 
+ 	from student
+ 	<where>
+ 		<choose>
+ 			<when test="name != null and name != ''"> <!-- 只要该条件匹配上，下面的的when就不会匹配 -->
+ 				and name like '%' #{name} '%'
+ 			</when>
+ 			<when test="age > 0">
+ 				and age > #{age}
+ 			</when>
+ 			<otherwise>
+ 				1 = 2
+ 			</otherwise>
+ 		</choose>
+ 	</where>
+ </select>
+	
+  foreach标签遍历数组：
+  <select id="selectStudentByForeach" resultType="Student">
+ 	select id,name,age,score 
+ 	from student
+ 	<if test="array.length > 0">
+ 		where id in
+ 		<foreach collection="array" item="myid" open="(" close=")" separator=","> <!--item相当于java中foreach循环中的那个当前变量  -->
+ 			#{myid}
+ 		</foreach>
+ 	</if>
+ </select>
+
+ foreach标签遍历List集合：
+ <select id="selectStudentByForeach2" resultType="Student">
+ 	select id,name,age,score 
+ 	from student
+ 	<if test="list.size > 0">
+ 		where id in
+ 		<foreach collection="list" item="myid" open="(" close=")" separator=","> <!--item相当于java中foreach循环中的那个当前变量  -->
+ 			#{myid}
+ 		</foreach>
+ 	</if>
+ </select>
+
+ foreach遍历泛型是自定义类型的List:
+ select id="selectStudentByForeach3" resultType="Student">
+ 	select id,name,age,score 
+ 	from student
+ 	<if test="list.size > 0">
+ 		where id in
+ 		<foreach collection="list" item="stu" open="(" close=")" separator=","> 
+ 			#{stu.id}
+ 		</foreach>
+ 	</if>
+ </select>
+
+ sql片段：
+ <!-- sql片段 -->
+ <select id="selectStudentBySqlFragment" resultType="Student">
+ 	 <include refid="selectColumns"/> 
+ 	from student
+ 	<if test="list.size > 0">
+ 	   where id in
+ 		<foreach collection="list" item="stu" open="(" close=")" separator=","> 
+ 			#{stu.id}
+ 	        </foreach>
+ 	</if>
+ </select>
+ 	
+<sql id="selectColumns">select id,name,age,score</sql>
+
+
+
+13，关联关系查询：
+	一对多关系(多表查询，不能使用延迟加载)：一方看得到多方
+	resultMap type="Country" id="countryMapper">
+ 		<id column="cid" property="cid"/> <!--属性名和column相同也要写  -->
+ 		<result column="cname" property="cname"/>
+ 		<collection property="ministers" ofType="Minister"> <!--ofType="Minister"是集合的泛型，也是下面要封装成的对象  -->
+ 			<id column="mid" property="mid"/>
+ 			<result column="mname" property="mname"/>
+ 		</collection>
+ 	</resultMap>
+ 	
+ 	<select id="selectCountryById" resultMap="countryMapper">
+ 		select cid,cname,mid,mname
+ 		from country,minister
+ 		where countryid=cid and cid=#{xxx}
+ 	</select>
+
+	另外一种解决一对多关系（常用这种方式，其实是多表单独查询，可以使用延迟加载）：
+	
+	<select id="selectMinisterByCountry" resultType="Minister">
+		select mid,mname from minister where countryid=#{ooo}
+	</select> 	
+ 	<resultMap type="Country" id="countryMapper">
+ 		<id column="cid" property="cid"/> <!--属性名和column相同也要写  -->
+ 		<result column="cname" property="cname"/>
+ 		<collection property="ministers" 
+ 			ofType="Minister"
+ 			select="selectMinisterByCountry"
+ 			column="cid"/> <!--把cid赋给了 #{ooo} -->
+ 	</resultMap>
+ 	
+ 	<select id="selectCountryById" resultMap="countryMapper">
+ 		select cid,cname from country where cid=#{xxx}
+ 	</select>
+
+
+	多对一查询：多方看得到一方
+	1，多表连接查询：
+	<resultMap type="Minister" id="ministerMapper">
+ 		<id column="mid" property="mid"/>
+ 		<result column="mname" property="mname"/>
+ 		<association property="country" javaType="Country">
+ 			<id column="cid" property="cid"/>
+ 			<result column="cname" property="cname"/>
+ 		</association>
+ 	</resultMap>
+ 	<select id="selectMinisterById" resultMap="ministerMapper">
+ 		select mid,mname,cid,cname
+ 		from minister,country
+ 		where countryid=cid and mid=#{xxx}
+ 	</select>
+
+	2，多表单独查询(常用)：
+
+	<select id="selectCountryById" resultType="Country">
+ 		select cid,cname from Country where cid=#{ooo}
+ 	</select>
+ 	<resultMap type="Minister" id="ministerMapper">
+ 		<id column="mid" property="mid"/>
+ 		<result column="mname" property="mname"/>
+ 		<association property="country" 
+ 					 javaType="Country"
+ 					 select="selectCountryById"
+ 					 column="countryid"/>
+ 	</resultMap>
+ 	<select id="selectMinisterById" resultMap="ministerMapper">
+ 		select mid,mname,countryid from minister where mid=#{xxx}
+ 	</select>
+
+
+14,自关联：
+	1,一对多关系
+	//查询指定栏目的所有子孙栏目(不包括自己本身)
+	<resultMap type="NewsLabel" id="newslabelMapper">
+ 		<id column="id" property="id"/>
+ 		<result column="name" property="name"/>
+ 		<collection property="chidren" 
+ 					ofType="NewsLabel"
+ 					select="selectChildrenByParent"  //自己调用自己
+ 					column="id"/>
+ 	</resultMap>
+ 	<select id="selectChildrenByParent" resultMap="newslabelMapper">
+ 		select id,name from newslabel where pid=#{xxx}
+ 	</select>
+
+	
+	//查询指定栏目及其所有子孙栏目(包括自己本身)
+	<select id="selectNewslabelByParent" resultMap="newslabelMapper">
+ 		select id,name from newslabel where pid=#{ooo}
+ 	</select>
+ 	<resultMap type="NewsLabel" id="newslabelMapper">
+ 		<id column="id" property="id"/>
+ 		<result column="name" property="name"/>
+ 		<collection property="chidren" 
+ 					ofType="NewsLabel"
+ 					select="selectNewslabelByParent"
+ 					column="id"/>
+ 	</resultMap>
+ 	<select id="selectNewsLabelById" resultMap="newslabelMapper">
+ 		select id,name from newslabel where id=#{xxx}
+ 	</select>
+
+
+	2,多对一关系：
+	
+	查询当前栏目及其所有父辈栏目：
+	<resultMap type="NewsLabel" id="newslabelMapper">
+ 		<id column="id" property="id"/>
+ 		<result column="name" property="name"/>
+ 		<association property="parent" 
+ 			javaType="NewsLabel"
+ 			select="selectNewsLabelById"
+ 			column="pid"/>
+ 	</resultMap>
+ 	<select id="selectNewsLabelById" resultMap="newslabelMapper">
+ 		select id,name,pid from newslabel where id=#{xxx}
+ 	</select>
+
+
+15，多对多关联查询：
+	多对多关系中，中间表是多方，另外两个表是一方
+
+	
+ 	<resultMap type="Student" id="studentMapper">
+ 		<id column="sid" property="sid"/>
+ 		<result column="sname" property="sname"/>
+ 		<collection property="courses" ofType="Course">
+ 			<id column="cid" property="cid"/>
+ 			 <result column="cname" property="cname"/>
+ 		</collection>
+ 	</resultMap>
+ 	<select id="selectStudentById" resultMap="studentMapper">
+ 		select sid,sname,cid,cname
+ 		from student1,middle,course
+ 		where sid=studentId and cid=courseId and sid=#{xxx}
+ 	</select>
+
+
+16，延迟加载（懒加载）：
+	加载：执行select查询
+	MyBatis对于主查询直接加载，对于关联查询延迟加载。
+	
+	在mybatis.xml文件中设置如下：
+	<!--设置整个应用的常量值  -->
+	<settings>
+		<setting name="lazyLoadingEnabled" value="true"/> <!--默认为false  -->
+		<setting name="aggressiveLazyLoading" value="false"/> <!--默认为true  -->   
+	</settings>
+
+	深度延迟：执行对主加载对象的查询时，不会执行对关联对象的查询。访问主加载对象的详情时也不会执行关联对象的select查询。
+		   只有当真正访问关联对象的详情时，才会执行对关联对象的select查询。
+
+	侵入式延迟：执行对主加载对象的查询时，不会执行对关联对象的查询。访问主加载对象的详情时会执行关联对象的select查询。把关联对象的详情侵入到主加载对象的详情里。
+
+
+17，一级缓存与二级缓存：
+	SqlSession一旦关闭则一级缓存就不复存在，而二级缓存的生命周期会与整个应用同步，与SqlSession是否关闭无关。
+	也就是说一级缓存是在同一个线程间共享数据，而二级缓存是在不同线程间共享数据。
+
+	一级缓存中读取数据的依据：Sql的id + SQL语句  
+ 	<select id="selectStudentById2" resultType="Student">    // id="selectStudentById2"就是Sql的id
+ 		select id,name,age,score from student where id=#{xxx}
+ 	</select>
+
+	// 缓存的底层实现是一个Map，Map的value是查询结果
+	// Map的key，即查询依据，使用ORM框架不同，查询依据是不同的。
+	// 证明从一级缓存中读取数据的依据：Sql的id + SQL语句。
+	// Hibernate查询的依据是：查询结果对象的id
+
+
+	增删改对一级缓存的影响：
+	@Test
+	public void test03(){
+		Student student = dao.selectStudentById(2);
+		System.out.println(student);
+		
+		// 增删改操作都会清空(刷新)一级缓存,即使不提交也会清空。
+		dao.insertStudent(new Student("赵六",26,96.5));
+		
+		Student student2 = dao.selectStudentById(2); 
+		System.out.println(student2);
+	}
+
+	二级缓存(一般不使用)：
+
+	1,内置的二级缓存：
+	
+	二级缓存的开启步骤：
+	1，在mapper.xml文件中设置如下：
+	  <cache/> 增加cache标签即可。
+
+	2，bean类(实体)需要实现Serializable接口
+
+
+	@Test
+	public void test01(){
+		sqlSession = MyBatisUtils.getSqlSession();
+		dao = sqlSession.getMapper(IStudentDao.class);
+		Student student = dao.selectStudentById(2);
+		System.out.println(student);
+		
+		sqlSession.close();  // 这里sqlSession关闭了就没有了，所以下面还要重新获取。
+		
+		sqlSession = MyBatisUtils.getSqlSession();
+		dao = sqlSession.getMapper(IStudentDao.class);
+		Student student2 = dao.selectStudentById(2);   // 与上面的用的是同一个nameSpace(二级缓存的生命周期与整个应用同步)
+		System.out.println(student2);	
+	}
+
+
+	// 增删改 对二级缓存的影响
+	@Test
+	public void test02(){
+		sqlSession = MyBatisUtils.getSqlSession();
+		dao = sqlSession.getMapper(IStudentDao.class);
+		Student student = dao.selectStudentById(2);
+		System.out.println(student);
+		
+		sqlSession.close();  // 这里sqlSession关闭了就没有了，所以下面还要重新获取。
+		
+		sqlSession = MyBatisUtils.getSqlSession();
+		dao = sqlSession.getMapper(IStudentDao.class);
+		
+		//插入
+		dao.insertStudent(new Student("",0,0));
+		
+		Student student2 = dao.selectStudentById(2);   // 与上面的用的是同一个nameSpace
+		System.out.println(student2);	
+		
+	}
+
+	同样可以设置使增删改对二级缓存没有影响在mapper.xml文件中设置如下，对一级缓存没有用：
+	<insert id="insertStudent" flushCache="false">
+
+	
+	增删改对清空缓存的清空的是Map中的value(把value置为null)，而key(查询依据)没有被清空，所有依然是有命中率的(Cache Hit Ratio)。
+	
+	二级缓存的关闭：
+	
+	全局关闭：在主配置文件(mybatis.xml)中设置如下：
+	<settings>
+		<setting name="cacheEnabled" value="false"></setting> <!-- 默认为true -->
+	</settings>
+
+
+	局部关闭：
+	<select id="selectStudentById" useCache="false" resultType="Student">  // 默认为true
+ 		select id,name,age,score from student where id=#{xxx}
+ 	</select>
+
+	二级缓存的使用原则：
+	1，多个nameSpace不要操作同一张表：二级缓存是在nameSpace范围使用的，如果其他的nameSpace修改了数据库中的数据，会导致数据不一致的现象。
+	2, 不要在关联关系表上执行增删改操作：一般情况下一个映射文件是对一张表的操作，一个Dao对应一个映射文件。当做增删改时，会导致数据不一致。
+	3，查询多于修改时使用二级缓存：查询顺序是先从一级缓存中找，然后再从二级缓存中找，如果使用二级缓存并且老是刷新缓存(执行增删改就会刷新缓存)，那么将会一直从一级到二级的查找，可是一级、二级缓存
+	   都没有数据，那么将会降低系统性能。
+
+
+	
+	ehcache 二级缓存：第三方的缓存产品。
+	
+	
+	使用ehcache步骤：
+	1，导入两个jar包(文件中有) ehcache-core-2.6.8.jar、mybatis-ehcache-1.0.3.jar
+	2，在映射文件(mapper.xml)中添加如下标签：
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+	3,打开ehcache的核心jar包，找到ehcache-failsafe.xml文件拷贝出来(用解压文件打开并拷贝，在MyEclipse中是拷贝不来的)，并把文件名改为ehcache.xml，复制到src下。
+	 注意：使用ehcahe二级缓存，实体类无需实现序列化接口。
+
+
+18，MyBatis的注解式开发(了解)：用于替换mapper.xml文件
+    mybatis.xml中要这样注册：
+    <!--注册映射文件  -->
+	<mappers>
+		<package name="com.bjpowernode.dao"/>
+	</mappers>

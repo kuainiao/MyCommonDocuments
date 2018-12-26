@@ -1,0 +1,271 @@
+1，svn作用：
+	1，实现项目组中的资源共享。
+	2，实现资源文件的版本控制。
+
+2，配置环境变量：SVN_HOME：E:\Tools\SVN\Apache-Subversion-1.10.0
+		 Path：%SVN_HOME%\bin
+		 在CMD窗口输入svn -h 有显示即安装成功。
+
+
+3，SVN常用命令：
+	1，管理员命令：
+	 svnadmin help
+	 svnadmin --version	  查看版本号
+	 svnadmin help create
+	 svnadmin create（重要）  用于创建svn版本仓库（创建的是根仓库）
+	 svn仓库分为：顶层仓库、根仓库。很多个根仓库放在同一个顶层仓库。类似于根目录与其下的子目录。
+	 例如：svnadmin create E:\Tools\SVN\repository\sms  就会报错Could not create top-level directory（不能创建顶层仓库repository，要先手动创建repository）
+	 根仓库目录是否存在都是可以创建的（如果根目录仓库不存在，命令会自动创建，若已经存在也是可以的。）
+
+
+	2，服务端命令：
+	 svnserve -h	获取帮助，查看一些命令参数
+	 svnserve -d	用于开启DOS系统下的svn服务  DOS窗口命令：netstat -a  查看网络状态 查看到： TCP    0.0.0.0:3690           account:0              LISTENING
+			3690就是svn默认使用的端口号
+
+	svnserve -d --listen-port=8888  更换端口号为8888
+	打开服务后就可以访问了，例如：svn://localhost:8888/E:/Tools/SVN/repository/sms（如果端口号为3690，可以不写端口号）。
+	这么写会暴露顶层仓库的位置，不安全。怎么解决？
+	解决如下：
+	svnserve -d -r E:\Tools\SVN\repository 指定默认的svn顶层仓库的路径，一旦指定后客户端在使用svn时直接给出根仓库名即可。
+	svn://localhost/sms
+	
+	将svn服务设置为windows开机时自动启动的服务：
+	sc create SVNServe binpath= "E:\Tools\SVN\Apache-Subversion-1.10.0\bin\svnserve.exe --service -r E:\Tools\SVN\repository" start=auto depend=Tcpip
+	注：该命令需要在管理员权限的命令行窗口运行。
+	sc：serve create  
+	SVNServe是服务名
+	--service表示windows服务
+	depend表示依赖协议
+
+	上述服务创建成功后，可以使用命令来启动该服务：net start SVNServe
+	C:\WINDOWS\system32>net start SVNServe
+	SVNServe 服务正在启动 .
+	SVNServe 服务已经启动成功。
+
+	net stop SVNServe	停止服务
+	C:\WINDOWS\system32>net stop SVNServe
+	SVNServe 服务正在停止.
+	SVNServe 服务已成功停止。
+
+	删除该服务：sc delete SVNServe  注意：最好要先停止服务再删除
+	
+	服务端修改客服端权限：在E:\Tools\SVN\repository\sms\conf下找到svnserve.conf文件19行打开注释，设置如下：
+	anon-access = write  表示未被认证的用户即能读又能写
+
+	3，客服端命令（重点）：
+	 1，svn checkout	创建客服端指定目录与服务端指定根仓库间的链接关系。一个客服端一般情况下只需要检出一次。
+	   1.1、基于顶层仓库的checkout:
+		这样开启的服务sc create SVNServe binpath= "E:\Tools\SVN\Apache-Subversion-1.10.0\bin\svnserve.exe --service -r E:\Tools\SVN\repository" start=auto depend=Tcpip
+		就是基于顶层仓库。
+		
+		C:\Users\64172>svn checkout svn://localhost/sms D:\svn\aacof  就会在D:\svn\aacof出现一个.svn隐藏目录。(在任意目录下运行)
+			D:\svn\aacof为Working Copy，通常称为客服端链接目录
+		D:\svn\bbcof>svn checkout svn://localhost/sms（在指定的目录下运行）就会在D:\svn\bbcof下出现“sms\.svn”（把根仓库的目录弄过来了）
+		
+
+	   1.2、基于根仓库的checkout（常用）:
+		这样开启的服务sc create SVNServe binpath= "E:\Tools\SVN\Apache-Subversion-1.10.0\bin\svnserve.exe --service -r E:\Tools\SVN\repository\sms" start=auto depend=Tcpip
+		就是基于根仓库。
+		
+		C:\Users\64172>svn checkout svn://localhost D:\svn\aacof (在任意目录下运行)
+		D:\svn\bbcof>svn checkout svn://localhost （在指定的目录下运行）
+		这两种执行效果一样。都是值出现一个.svn的隐藏目录
+	
+		
+	 2,svn add命令：	
+	   服务端修改客服端权限：在E:\Tools\SVN\repository\sms\conf下找到svnserve.conf文件19行打开注释，设置如下：
+	   anon-access = write  表示未被认证的用户即能读又能写。注意：打开注释时，前面不能有空格，应该顶格。
+	
+	   2.1 add 文件
+		   在D:\svn\aacof文件夹下任意创建一个文件，此时svn并不会感知到该文件的存在，svn并不会对其管理，通过svn add命令，添加
+		   文件到svn管理中。需要注意的是该文件必须在Working Copy文件夹中。
+		   C:\Users\64172>svn add D:\svn\aacof\Students.txt 此时Students.txt就会被SVN管理了。
+
+		   如果在当前Working Copy路径可以这样使用：D:\svn\aacof>svn add Teachers.txt
+		   注意：已经add的文件不能重复add，即使修改文件里的内容。
+
+	  2.2 add 目录
+		  D:\svn\aacof>svn add xxx  会把xxx目录下的所有的文件及目录也会交给svn管理
+
+
+         3，svn commit命令：用于将客服端Working Copy中所有对文件、目录的操作提交到服务端
+		svn commit Students.txt -m writed-by-aa  注意：commit命令必须携带参数-m，用于完成日志记录，提交后的文件在服务端是无法直接看到的，并不是与文件的形式存在。
+		此时执行命令svn checkout svn://localhost D:\svn\aacof 就会有Students.txt文件。
+		执行第二次提交：svn commit Students.txt -m commited-2 当文件没有修改时，第二次提交不起作用，当文件内容修改时，第二次提交就会起作用。
+
+		svn commit -m writed-by-aa Teachers.txt   参数也可以放中间
+		svn commit -m writed-by-aa   会提交全部文件
+
+
+	4，svn update命令：
+		当A账户修改文件内容，然后提交。B账户可以使用如下命令：
+		svn update Students.txt  更新修改的内容
+		svn update   更新多个文件
+
+	
+	5,svn delete命令：
+		A账户执行svn delete Works.txt  删除的是本客户端的文件，服务端的并不会删除。如果再执行commit命令，就会将删除同步到服务端。
+		svn commit -m xxxx
+		B账户执行svn update 就会少A删除的文件。
+		如果是鼠标右键删除，然后commit是无法同步删除到服务端的。
+		svn delete xxx  如果删除的是目录，就会将xxx目录下的所有的文件及目录删除掉。
+
+
+	6，svn revert命令：恢复客户端被删除的文件
+		svn revert Students.txt  注意如果删除后提交了，再revert就不起作用了。
+
+
+	7，svn list命令：获取当前目录中的所包含的所有目录及文件
+
+
+	8，svn info：获取服务端及客户端的一些相关的信息
+		
+
+	9，svn help：获取svn命令的帮助，查看所有的svn命令
+	    svn help 子命令，例如svn help revert 可以查看到revert命令的详细信息
+
+
+4，TortoiseSVN：
+	Windows支持Over Icon(覆盖图标)最多15个，windows本身及其它应用程序已经将这15个Over Icon占用，所以SVN安装成功后，图标没有变化。如何解决？
+	修改注册表，查找到ShellIconOverlayIdentifiers注册表。
+
+	冲突问题：当一个文件在两个客户端都被修改后，第一个客户端进行提交是没有问题的，会将其修改过的内容提交到服务端。
+		  但第二个客户端在进行提交时会出现问题，不能完成提交。
+
+	冲突分为：异行修改冲突、同行修改冲突
+	异行修改冲突：多个客户端对同一版本文件做出的修改，可以是任意的添加、修改、删除操作，只要他们修改的不是同一行数据内容。
+		      SVN的解决方法是：将修改进行合并，即大家的修改都起作用。
+	
+	同行修改冲突：多个客户端对同一版本文件做出的修改，可以是任意的添加、修改、删除操作，修改的是同一行数据内容。
+		      SVN无法自动给出解决方法，此时只能由人工进行冲突内容的选择。
+
+	
+        混合修改冲突：上面的两个冲突同时存在。
+	
+	匿名用户无法获取锁，要先为用户添加权限（授权用户），
+	1，设置权限：
+	svnserve.conf文件中把auth-access = write的注释打开，anon-access = write注释掉。27行password-db = passwd注释打开。
+	36行authz-db = authz注释打开(权限文件)，52行realm = My First Repository注释打开，把其值修改为根仓库名，例如：realm = oa
+
+	2，注册密码文件：
+	找到passwd文件，设置如下，例如:
+	aa = 111
+	bb = 111
+	cc = 111
+	dd = 111
+	ee = 111
+
+	3，找到authz文件，设置如下
+	[/]   表示根仓库的所有权限
+	aa = rw   rw表示具有读写权限
+	bb = rw
+	cc = rw
+	dd = r    r表示具有读权限
+	ee = r
+	* =       * = 表示其他同行没有权限
+
+	[/com/bjpowernode/beans]   指定目录的权限
+	aa = rw
+	bb = r
+	cc = r
+	dd = r
+	ee = r
+	* = 
+	注意：authz文件设置的权限高于svnserve.conf文件的权限。
+	如果用户过多，也可以使用如下的方式：
+	在[groups]下设置如下：
+	leaders = aa
+	members = bb,cc,dd,ee
+
+	分配权限如下：
+	[/com/bjpowernode/service]
+	@leaders = rw
+	@members = r
+	* = 
+
+	4，文件锁（工作中一般不用）：加上锁，其他用户就只能读，不能修改。
+
+
+
+5，在eclipse中使用svn：
+	
+
+
+6，apache服务器与svn：
+	在E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache24\conf中找到httpd.conf文件修改如下：
+	38行修改成Define SRVROOT "E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache24"
+	
+	常用命令：
+	需要在管理员权限的命令行下运行。
+	在cmd窗口输入httpd即可开启apache服务，这种方式的弊端是，cmd命令行一直处于等待状态，并且不能关闭，一旦关闭窗口，apache服务就停止了，一般不使用这种方式。
+	httpd -h   查看帮助
+	httpd -k install	将apache服务安装成一个windows服务
+	httpd -k uninstall	卸载install的服务
+	httpd -k install -n name	安装apache服务并且设置其名称为name，例如：httpd -k install -n "Apache-Server"
+	httpd -k start	启动apache服务，这种启动是默认启动默认的名称，即服务名apache2.4
+	httpd -k start -n "Apache-Server"	启动指定名称的apache服务
+	httpd -k stop -n "Apache-Server"	停止服务
+	httpd -k shutdown -n "Apache-Server"	停止服务
+	httpd -k restart	重启服务
+	地址栏输入访问：http://localhost	出现页面说明启动成功
+
+	apache服务器与svn的整合：
+	1，打开E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache22\conf下的httpd.conf文件的84、85行的注释。
+	   so文件，即Share Object,共享对象文件，是Linux系统下的动态链接库文件，类似于Windows下的.dll文件。
+
+	2，复制两个so文件：复制E:\Tools\SVN\Subversion-1.6.6\bin下的mod_authz_svn.so、mod_dav_svn.so文件到E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache22\modules下。
+
+	3，再修改httpd.conf文件：
+		E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache22\conf下的httpd.conf文件
+		把上面复制的两个文件也加载，添加到刚才打开的注释行下面，如下：
+		LoadModule authz_svn_module modules/mod_authz_svn.so
+		LoadModule dav_svn_module modules/mod_dav_svn.so
+		
+	4，复制dll文件：
+		从E:\Tools\SVN\Subversion-1.6.6\bin复制8个文件，libsvn_client-1.dll到libsvn_wc-1.dll之间的8个文件
+		到E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache22\bin下，因为上面的两个文件的运行依赖于这8个文件。
+		
+		注意：经测试要把所有的dll文件复制过去才可以。
+
+	5，运行htppasswd命令：
+		该命令位于E:\Tools\apacheServe\httpd-2.4.33-o102o-x64-vc14-r2\Apache22\bin下。
+		该命令用于为SVN用户分配访问Apache服务器的用户名与密码，这个命令需要在管理员权限的命令行运行。
+		E:\Tools\SVN>htpasswd -cb apache.conf aa 222  就会在E:\Tools\SVN下生成一个 apache.conf文件
+		紧接着执行命令htpasswd -b apache.conf bb 222  就会在apache.conf文件中生成新的用户。用户名为bb，密码为222
+
+
+	6，复制密码文件即上面生成的apache.conf文件到E:\Tools\SVN\repository\ems\conf下。
+
+	7，第三次修改httpd.conf文件：
+		添加如下内容到httpd.conf文件最后：
+		#指定访问使用的URI，/svn/ems是随便写的
+		<location /svn/ems>
+			#指定远程要访问的模块为SVN
+			DAV svn
+			#指定svn根仓库路径
+			SVNPath E:/Tools/SVN/repository/ems
+			#指定svn授权文件路径
+			AuthzSVNAccessFile E:/Tools/SVN/repository/ems/conf/authz
+			#指定所有用户都需要进行身份验证
+			Satisfy Any
+			Require valid-user
+			#指定验证方式为基础验证，即密码验证
+			AuthType Basic
+			#指定项目名称
+			AuthName "ems"
+			#指定用户密码文件路径
+			AuthUserFile E:/Tools/SVN/repository/ems/conf/apache.conf
+		</location>
+
+
+	  整合成功的标志：浏览器输入localhost/svn/ems，会弹出输入用户名和密码的对话框，出现ems - Revision 0: /即表示整合成功
+
+
+
+
+	
+
+
+	
+		

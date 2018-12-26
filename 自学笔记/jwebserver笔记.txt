@@ -1,0 +1,56 @@
+1，lib文件夹是用来放外部文件的，bin文件夹是用来放生成的.class文件，Test(测试)文件应该是Source Folder类型，包名应该和被测试的类相同。
+
+2，java中“@”表示的是注解
+
+3，使用junit测试：
+	1，手动测试(这里的手动与自动指的是eclipse不自动与自动生成测试方法的区别)
+	手动测试的步骤：
+	1,在src文件夹下写一个需要测试的类
+	2,创建Source Folder类型的文件夹，文件夹名为test,使用快捷键“ctrl+n”创建一个class类(注意这里是与自动测试不同的地方)
+	@Test
+	public void testSum() {
+		int actual=MyMath.sum(10,10); //实际值
+		int expected = 20; //期望值
+		assertEquals(expected,actual); //断言  这个方法说白了就是拿expected与actual的值进行比较
+	}
+	@Test
+	public void testDivide() {
+		int actual=MyMath.divide(100, 20); //实际值
+		int expected=10;				//期望值
+		assertEquals(expected, actual); //断言
+		
+	}
+
+	2，自动测试
+	用eclipse自动生成测试方法的步骤：
+	1,在src文件夹下写一个需要测试的类
+	2,创建Source Folder类型的文件夹，文件夹名为test，在该文件夹下使用快捷键“ctrl+n” 创建JUnit Test Case.
+	3,在弹出的对话框中选择New JUnit 4 test测试,快捷键“ALT+O”选择保存的地址为test文件下，包名应该和被测试的类的包名相同。
+	（点中需要测试的类，当创建“JUnit Test Case.”时，在弹出的对话框中会自动生成，包名等，而不需要手动选择。）
+	4，在"Class under test"(选择的是该类中的方法),使用快捷键"ALT+N"选择被测试类的想要的测试方法。
+
+
+4，URL与URI
+	URL：统一资源定位符，可以定位网络中某个资源。例如：http://127.0.0.1:8080/oa/index.html
+	URI：统一资源标识符，只是代表网络中某个资源的名称，不具备定位功能，或者说是URL的一部分。例如上面的：/oa/index.html 就是一个URI。
+	浏览器向服务器发送请求并且提交数据的格式：http://ip:port/uri?name=value&name=value......
+
+
+5,SUN制定的配置文件规范
+	A，在配置文件web.xml中描述请求URI和对应的Servlet类之间的关系
+	B，web.xml文件统一放到WebAppRoot/WEB-INF/目录下     //WebAppRoot 表示的是应用名称
+	C，web.xml文件中采用如下的标签描述URI和对应的Servlet类之间的关系:
+	<?xml version="1.0" encoding="utf-8"?>
+	<web-app>
+		<servlet>
+			<servlet-name>Servlet名字</servlet-name>
+			<servlet-class>Servlet完整类名</servlet-class>
+		</servlet>
+		<servlet-mapping>
+			<servlet-name>Servlet名字</servlet-name>
+			<url-pattern>请求URL</url-pattern>
+		</servlet-mapping>
+	</web-app>
+
+	注意：以上为一组业务 处理类，同一组中的两个"Servlet名字"要保持一致。可以有多组业务处理类，不同组之间的"Servlet名字不能重复。
+	      在<url-pattern>中的“请求URL”不需要再加项目名称，例如前面/oa/login中  /oa是项目名称，这里只用/login就可以了。

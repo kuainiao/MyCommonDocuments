@@ -1,0 +1,90 @@
+-----------------2018-09-08-----------------
+1，LiquidationDetaliSpec类上：
+	public Predicate toPredicate(Root<BankClearingD> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder)方法
+		if((!"applicationDate"...)  排序字段未确定
+
+
+2，BankClearingDServiceImpl类：
+	Sort sort = new Sort(new Sort.Order(Sort.Direction.DESC, ""));  排序字段
+
+
+3，清算单和清算明细表怎么对应？
+
+4，提现金额提现手续费怎么计算？
+
+5，平台券补贴是哪个表？
+
+6，PlatformSubsidyTicketServiceImpl类的findPlatSubsidyList()方法，id(平台补贴卷传过来的id)参数还没使用。
+
+
+---------------------------2018-09-15---------------------
+1，子账户管理bug：Unknown column 'subaccount0_.purchaser_id' in 'field list'
+2，供应商出入金账户：输入供应商名称查询时报错
+
+
+---------------------2018-09-20-----------------------------------------
+1，子账户管理：交易会员名称模糊查询查不了。
+
+2，子账户管理：修改状态账户状态没有回显。
+
+3，子账户管理：查看出入金账户银行类型不对应。
+
+4，清算明细页面报Could not parse as expression: ""异常
+
+
+
+Page<Coupon> all = platformSubsidyRepository.findAll(queryParams, pageRequest);
+        if(all != null && all.getTotalElements() > 0){
+            for (Coupon coupon : all.getContent()) {
+                PlatformSubsidyModel platformSubsidyModel = new PlatformSubsidyModel();
+                platformSubsidyModel.setCode(coupon.getCode());
+                platformSubsidyModel.setName(coupon.getName());
+                PromotionDiscountTypeEnum discountType = coupon.getDiscountType();
+                if(discountType != null){
+                    switch (discountType){
+                        case FULLFOLD:{
+                            platformSubsidyModel.setPromotion(coupon.getDiscountRate() + "折");
+                            break;
+                        }
+                        case MONEYOFF:{
+                            platformSubsidyModel.setPromotion("满减" + coupon.getDiscountMoney());
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+---------------------2018-10-18-----------------------
+1，PC版总后台编辑和添加首页弹窗图片如何保存和显示
+
+2，平台类型没有添加
+
+
+-----------------------------2018-11-22---------------------------
+SalesDayServiceImpl类中的queryRefundAmount方法，查询如下，mybatis查询与数据库查询返回数据不一致的问题。
+SELECT
+salesman_id salesmanid,
+ifnull(sum(anticipated_total_price),0) totalRefundAmount
+FROM
+ccf_refund
+WHERE
+STATUS = 'SUCCEEDED'
+AND salesman_id IS NOT NULL
+AND create_date >= #{dateStart} AND create_date &lt; #{dateEnd}
+GROUP BY
+salesman_id;
+
+
+SalesDayVO的属性产生默认值的问题
+
+
+//月售后订单数	当月的“售后订单数”之和
+List<Map<String, Object>> countOrderServiceList = ccfSalesMonthDao.queryCountOrderService(firstDay, firstDayNexMonth);的sql
+	select salesman_id salesmanid, count(id) CountOrderService
+        from ccf_refund
+        where deleted IS NULL OR deleted = 0
+         and status != 'PENDED'   //这里状态不确定
+         AND create_date >= #{dateStart} AND create_date &lt; #{dateEnd}
+        GROUP BY salesman_id

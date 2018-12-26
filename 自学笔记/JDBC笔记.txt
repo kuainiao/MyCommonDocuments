@@ -1,0 +1,18 @@
+1，数据库URL：
+	MySQL的URL：jdbc:mysql://localhost:3366/数据库名称
+
+2，MySQL中varchar最大能放255个。
+
+3,last_insert_id()函数：取出最后插入的id，MySQL独有的。
+
+4，反射机制中通过类Class使用newInstance要求构造方法无参数。当构造方法有参数时，要先找到构造器，	
+	例如：Constructor con = clazz.getConstructor(String.class);然后通过构造器newInstance，即
+	Object obj = con.newInstance("test name");
+
+5，在eclipse中通常看到"@Override"这种注释(在java中用annotation表示)表示的是覆盖超类的方法，方法名必须和父类的一样，否则会报错。
+
+6，使用Spring JdbcTemplateTest需要的jar包：spring-jdbc,spring-bean,spring-tx,spring-context,commons-logging。
+
+7，在匿名类里使用外围参数，必须使用final修饰：为了保证内部的变量不会变化(final修饰的变量不会改变)
+
+8,配置文件properties的注释用#。

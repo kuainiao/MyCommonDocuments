@@ -1,0 +1,45 @@
+SELECT
+	salesman_id,
+  count(id)	
+FROM
+	ccf_trade 
+WHERE
+	purchaser_id IN (
+SELECT
+	p.id purchaser_id 
+FROM
+	ccf_drug d
+	JOIN ccf_purchaser p ON d.purchaser_company_id = p.purchaser_company_id 
+WHERE
+	d.salesman_id IS NOT NULL 
+	AND d.purchaser_company_id IS NOT NULL 
+	AND d.deleted = 0 
+	AND p.deleted = 0 
+	) 
+	AND deleted = 0
+	AND salesman_id is not null
+	GROUP BY salesman_id
+
+
+
+根据采购商所在的区域查询所做促销的商品：
+SELECT
+	p.id,p.promotion_type,g.id goosId,b.id buinessId,baa.business_area_id,baa.area_id,a.id areaId
+FROM
+	ccf_promotion p
+	LEFT JOIN ccf_goods g ON p.goods_id = g.id
+	LEFT JOIN ccf_business_area b ON g.business_area_id = b.id
+  LEFT JOIN ccf_business_area_areas baa on b.id = baa.business_area_id
+  LEFT JOIN ccf_area a on baa.area_id = a.id	
+WHERE
+	(g.business_area_id IS NULL 
+	OR baa.area_id IN (440010, 440010111, 440
+	))
+	AND p.promotion_type = 'SPECIAL_OFFER'
+	AND p.promotion_type != 'SUSPEND'
+	AND p.activity_start_time <= now()
+	AND (p.activity_end_time is null or p.activity_end_time >= now());
+
+
+按时间倒序查询采购商的订单(不包含DRAFT)：
+select id,create_date,actural_total_price,`status`,parent_trade_id from ccf_trade where deleted = 0 and `status` != 'DRAFT' and purchaser_id = '2hujk01bsz4s' ORDER BY create_date desc

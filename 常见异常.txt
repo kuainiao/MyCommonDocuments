@@ -1,0 +1,12 @@
+1，Could not parse as expression: ""：
+	前台页面有th:text="" 不能解析
+
+
+2，Unable to locate Attribute  with the the given name [name] on this ManagedType：
+	后台实体类没有这个属性
+
+3，Body parameter 7 was null
+	以公司项目为例子：Rest层参数少注解 @RequestParam("companyName")
+
+4，在使用@RequestBody是报异常 415，解决方法是做ajax请求时设置contentType:'application/json;charse=UTF-8',
+	

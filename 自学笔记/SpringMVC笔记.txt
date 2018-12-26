@@ -1,0 +1,994 @@
+1������WEB-INF�µ���Դ�������û�а취ֱ�ӷ��ʵģ���ζ��ʹ���ض������޷���ת��WEB-INF�µģ�����ת�����ԣ�����Ϊ��Ҳ���������������������
+
+2, дһ���������࣬����̳���Controller
+
+3����Spring�������ļ����������£�
+	<!--ע�ᴦ����  ,/my.do�С�/���Ǳ����-->
+	<bean id="/my.do" class="com.bjpowernode.handlers.MyController" />
+
+	��web.xml�ļ����������£�
+	<!--ע�����������  -->
+	<servlet>
+		<servlet-name>reyco</servlet-name>  <!--�������д  -->
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>reyco</servlet-name>
+		<url-pattern>*.do</url-pattern> <!--ע�����ｨ����*.do�������䡰/*�������Ҳ��Ҫд�ɡ�/��,��Ϊ��/��ֻ���ؾ�̬��Դ�������ض�̬��Դ��jsp��  -->
+	</servlet-mapping>
+
+	������ʵõ�Spring�������ļ����ֱ����Ϊreyco-servlet.xml����Ҫ����WEB-INF�ļ����¡����Ҫ��������ҷ�����·���£���web.xml���������£�
+	<!--ע�����������  -->
+	<servlet>
+		<servlet-name>reyco</servlet-name>  <!--�������д  -->
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup> <!-- һ����ͻᴴ��Servlet -->
+
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>reyco</servlet-name>
+		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+
+4����Ⱦ����������䵽ҳ�档
+
+
+5��SpringMVC��Ĭ�������ļ���λ�ã�spring-webmvc-4.3.2.RELEASE.jar -> ��org.springframework.web.servlet -> �ļ�DispatcherServlet.properties
+
+
+6, �����ע�����������ʱ��ƫҪʹ�á�/���������ؾ�̬��Դ������(�������������ǵľ�̬��Դ)��
+	1��һ�ַ��������03-urlpattern -> web.xml
+
+	2�ڶ��ַ�����Ҫ��springMVC�������ļ������mvcԼ�����ɲ���SpringMVC��ȫԼ��������
+	  Ȼ����spring.xml�ļ���������±�ǩ���ɣ�
+	  <mvc:default-servlet-handler/>  <!-- �ײ㻹�ǲ��õ�Tomcat��DefaultServlet�������̬��Դ�ķ��������뷽��һ��ʵԭ����һ���� -->
+
+	3�������ַ�������SpringMVC�����ļ��������£�
+	<!-- location��ʾ��Դ��λ��(����ķ�ʽ����Ӧ�õĸ�·����)��mapping��ʾ��Դ���������ַ�ʽ�Ƚ��鷳 -->
+	<mvc:resources location="/images/" mapping="/images/**" />
+
+
+7��SpringMVC������ʽ������
+	1,������ӳ����HandlerMapping����ʵ����������(��ʵ�ж��ʵ���࣬�����õ�������)BeanNameUrlHanderMapping��SimpleUrlHanderMapping��
+	
+	1.1 BeanNameUrlHandlerMapping��Ĭ��ʹ�õģ�����ڵ������ǣ������ǵĴ�����������do������ʱ����Ҫ�����������������
+	<bean id="/my.do" class="com.bjpowernode.handlers.MyController" />
+	<bean id="/hello.do" class="com.bjpowernode.handlers.MyController" />
+	
+	1.2 SimpleUrlHanderMapping�����BeanNameUrlHandlermapping���������������������⣺
+	
+		<!--ע�ᴦ����ӳ����  -->
+		<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+			<property name="mappings">
+				<props>
+					<prop key="/hello.do">myController</prop> 
+					<prop key="/world.do">myController</prop> 
+					<prop key="/my.do">myController</prop> 
+				</props>
+			</property>
+		</bean>
+		
+		<!--ע�ᴦ����  ,/my.do�С�/���Ǳ����-->
+		<bean id="myController" class="com.bjpowernode.handlers.MyController" />
+
+		
+		<!--����һ��ʵ�ַ�ʽ  -->
+		<property name="urlMap">
+			<map>
+				<entry key="/hello.do" value="myController" />
+				<entry key="/world.do" value="myController" />
+			</map>
+		</property>
+
+
+	
+	2��������������HandlerAdapter��
+	 2.1 SimpleControllerHandlerAdapterĬ��ʹ�ã���ʵ����Controller�ӿڵĴ�������������
+		HandlerExecutionChain��������ִ�������а���һ���������Ͷ��������
+	
+	public class MyController implements Controller {
+
+		public ModelAndView handleRequest(HttpServletRequest request,
+				HttpServletResponse response) throws Exception {
+			
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("message","Hello SpringMVC World!");
+			mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+			return mv;
+		}
+
+	
+	}
+	
+	 2.2 HttpRequestHandlerAdapterҲ��Ĭ��ʹ�ã���ʵ����HttpRequestHandler�ӿڵĴ���������������
+	
+	 public class MyController implements HttpRequestHandler {
+
+		public void handleRequest(HttpServletRequest request,
+				HttpServletResponse response) throws ServletException, IOException {
+			request.setAttribute("message", "Hello SpringMVC World!");
+			request.getRequestDispatcher("/WEB-INF/jsp/welcome.jsp").forward(
+					request, response);
+		}
+
+	}
+
+	������ʵ�ֵĹ�������ͬ�ġ�
+
+
+	3����������ע�⣬���潲�������ִ�������ʵ��Controller��HttpRequestHandler�ӿڵģ������ڽ��������ִ���������
+	3.1���̳���AbstractController�ࣨ������AbstractController��ʵ����Controller�ӿڣ����������������SimpleControllerHandlerAdapter
+		�ܹ�POST�ύ������ֻ�����֣������ajax
+		ʹ�ø�������ã�
+		<!--ע�ᴦ����  ,/my.do�С�/���Ǳ����-->
+		<bean id="myController" class="com.bjpowernode.handlers.MyController">
+			<property name="supportedMethods" value="POST"></property>  <!--POST�����д��ָ������ʽ����ΪPOST  -->  
+		</bean>
+	
+	3.2,�̳���MultiActionController�ࣺMultiActionController extends AbstractController implements LastModified
+		MultiActionController��ļ̳�������ж����������������ַ�ʽ���ж�Ҫִ���ĸ������ġ�
+
+		3.2.1 methodNameResolverĬ�ϣ�
+		<property name="urlMap">
+				<map>
+					<!--*��ʾ���Ƿ�����,/my�ǽ��ж�һ�������
+						MultiActionController�����һ������methodNameResolver������������������
+						�����Ĭ��ֵ new InternalPathMethodNameResolver();�ý���������������Ϊ��Դ���н�����
+						�Ǿ���ζ�ţ������ύ����ʱ��Ҫ����������Ϊ��Դ���Ƴ��֡�
+					  -->
+					<entry key="/my/*.do" value-ref="myController" /> <!--ʹ��value��value-ref��һ��  -->
+				</map>
+			</property>
+		</bean>
+
+		3.2.2 PropertiesMethodNameResolver
+		
+		<!--ע�ᴦ����ӳ����  -->
+			<property name="urlMap">
+				<map>
+					<!--*��ʾ���Ƿ�����,/my�ǽ��ж�һ�������
+						MultiActionController�����һ������methodNameResolver������������������
+						�����Ĭ��ֵ new InternalPathMethodNameResolver();�ý���������������Ϊ��Դ���н�����
+						�Ǿ���ζ�ţ������ύ����ʱ��Ҫ����������Ϊ��Դ���Ƴ��֡�
+					  -->
+					<entry key="/my_*.do" value-ref="myController" /> <!--ʹ��value��value-of��һ��  -->  // �����keyҪ�������key��Ӧ
+				</map>
+			</property>
+		</bean>
+		<!--ע�᷽�����ƽ�����  -->
+		<bean id="propertiesMethodNameResolver" class="org.springframework.web.servlet.mvc.multiaction.PropertiesMethodNameResolver">
+			<property name="mappings">
+				<props>
+					<prop key="/my_first.do">doFirst</prop>  // �����keyҪ�������key��Ӧ
+					<prop key="/my_second.do">doSecond</prop>  
+				</props>
+			</property>
+		</bean>
+		
+		<!--ע�ᴦ����  ,/my.do�С�/���Ǳ����-->
+		<bean id="myController" class="com.bjpowernode.handlers.MyController">
+			<property name="methodNameResolver" ref="propertiesMethodNameResolver" />
+		</bean>
+
+
+		3.2.3 ParameterMethodNameResolver��
+			
+		<!--ע�᷽�����ƽ�����  -->
+		<bean id="parameterMethodNameResolver" class="org.springframework.web.servlet.mvc.multiaction.ParameterMethodNameResolver">
+			<property name="paramName" value="xxx" /> <!--���������д�������д����Ĭ�ϲ���������action  -->
+		</bean>
+		
+		<!--ע�ᴦ����  ,/my.do�С�/���Ǳ����-->
+		<bean id="myController" class="com.bjpowernode.handlers.MyController">
+			<property name="methodNameResolver" ref="parameterMethodNameResolver" />
+		</bean>
+		
+		�ڵ�ַ�����������ʣ�http://127.0.0.1/16-multiActionController-3/my.do?xxx=doFirst ���ܷ��ʵ�doFirst���������ѷ���������������
+
+		ʹ��Ĭ�ϲ������Ʒ��ʣ�http://127.0.0.1/16-multiActionController-3/my.do?action=doFirst  ע��������������ƵıȽ�
+
+
+	
+	4����ͼ��������
+	
+	4.1��InternalResourceViewResolverĬ��ʹ�ã�ȱ�㣺�޷���ת���ⲿ��Դ������ٶȣ������ȡ�
+	
+	<!--ע����ͼ������  -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+
+	4.2��BeanNameViewResolver�� ȱ�㣺���ж����ͼʱ����ʹ�ļ�ӷ�ס�
+		RedirectView	�����ⲿ��Դ��ͼ����
+		JstlView	�����ڲ���Դ��ͼ����
+		
+		<!-- ����һ���ڲ���Դ��ͼ -->
+		<bean id="internalResource" class="org.springframework.web.servlet.view.JstlView">
+			<property name="url" value="/WEB-INF/jsp/welcome.jsp"></property>
+		</bean>
+		<!-- ����һ���ⲿ��Դ��ͼ -->
+		<bean id="taobao" class="org.springframework.web.servlet.view.RedirectView">
+			<property name="url" value="http://www.taobao.com"></property>
+		</bean>
+		<!-- ����һ���ⲿ��Դ��ͼ -->
+		<bean id="jd" class="org.springframework.web.servlet.view.RedirectView">
+			<property name="url" value="http://www.jd.com"></property>
+		</bean>
+		
+		<!--ע����ͼ������  -->
+		<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+		
+		��������������ת:
+		public ModelAndView handleRequest(HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		
+			return new ModelAndView("taobao"); // ��Я�����ݵ���ת
+		}
+
+	4.3��xmlViewResolver������ͼ��������һ��xml�ļ��С�
+		
+		<!--ע����ͼ������  -->
+		<bean class="org.springframework.web.servlet.view.XmlViewResolver">
+			<property name="location" value="classpath:myViews.xml" /> // value��ֵ����·�����Լ��������ͼ����
+		</bean>
+
+
+	4.4��ResourceBundlelViewResolver������ͼ����.properties�ļ��С�
+		.properties��ϸ������� 19-ResourceBundlelViewResolver - myViews.properties�ļ�
+		<!--ע����ͼ������  -->
+		<bean class="org.springframework.web.servlet.view.ResourceBundleViewResolver">
+			<property name="basename" value="myViews" />  // myViews��properties���ļ���
+		</bean>
+
+	4.5,��ͼ�����������ȼ����Ƚϵ�����xml��properties�ļ���ִ��˳��
+		Ĭ�ϵ�ִ��˳���ǣ�˭ע��ǰ�����ִ��˭�������������orderָ��˳��
+		<!--ע����ͼ������1  -->
+		<bean class="org.springframework.web.servlet.view.ResourceBundleViewResolver">
+			<property name="basename" value="myViews" />
+			<property name="order" value="3" />
+		</bean>
+		
+		<!--ע����ͼ������2  -->
+		<bean class="org.springframework.web.servlet.view.XmlViewResolver">
+			<property name="location" value="classpath:myViews.xml" />
+			<property name="order" value="1" />
+		</bean>
+		ע�⣺order�������0��С�ڵ���0��������Ч��һ��������ԽС���ȼ�Խ�ߡ�
+
+
+8.Spring��ע��ʽ�������ص㣩��ʵ�ֹ��ܣ��Զ���Ĵ���������ʵ�ֽӿڣ����Ҳ��ý���ע�ᡣ
+	1����һ��ע��ʽ��������
+	@Controller  // ��ʾ��ǰ����һ�������������ҷ��������ж��  ��� 21-primary-annotation
+	public class MyController {
+	
+		@RequestMapping("/my.do")  // �ύmy.do���ܷ����������������ʹ��ע��󷽷������������ˡ�
+		public ModelAndView doSome(HttpServletRequest request,
+			HttpServletResponse response) {
+		
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("message","Hello SpringMVC World!");
+			mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+			return mv;
+	}
+
+	Spring�����ļ���Ҫ������ɨ����:
+		<!-- ע�����ɨ���� -->
+		<context:component-scan base-package="com.bjpowernode.handlers" />
+
+	
+	2��������������ӳ�����Ķ��壺
+
+	2.1�������ռ�(��Ҫ)��
+	@Controller  // ��ʾ��ǰ����һ��������
+	@RequestMapping("/xxx/ooo/jjj")  // �����ռ䣨����������ģ�
+	public class MyController {
+	
+		@RequestMapping({"/my.do","hello.do"})  // ����hello.do��������ǰ���Զ����ϡ�/����
+		public ModelAndView doFirst(HttpServletRequest request,
+				HttpServletResponse response) {
+			
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("message","ִ��doFirst()����");
+			mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+			return mv;
+		}
+		
+		@RequestMapping("/second.do")  
+		public ModelAndView doSecond(HttpServletRequest request,
+				HttpServletResponse response) {
+			
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("message","ִ��doSecond()����");
+			mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+			return mv;
+	}
+	
+	2.2.ͨ����÷����˽⣩��
+	@RequestMapping("/third*.do")  // ����ʹ��third.doҲ����
+	public ModelAndView doThird(HttpServletRequest request,
+			HttpServletResponse response) {
+		
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("message","ִ��doThird()����");
+		mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+		return mv;
+	}
+
+	2.3���ύ��ʽ(�˽�)��
+	@RequestMapping(value={"/my.do","hello.do"},method=RequestMethod.POST)
+
+	2.4,������Я���������˽⣩:
+	@RequestMapping(value="/second.do",params={"name","!age"})  // name���������У�age����������,�����Ĳ���Ҳ���ԡ�
+	http://127.0.0.1/21-primary-annotation/test/second.do?name=zs&score=23&teacher=lisi  // û��ָ���Ĳ���Ҳ������
+	
+	@RequestMapping(value="/second.do",params={"name=zs","!age"}) // name����ֵ����Ϊzs
+	
+	
+		
+	3,�����������Ĳ�����
+	  
+	3.1.1����������գ�
+	@Controller
+	@RequestMapping("/test") 
+	public class MyController {
+	
+	@RequestMapping("/register.do")  
+	public ModelAndView doFirst(String name,int age) {
+		System.out.println("name=" + name);
+		System.out.println("age=" + age);
+		
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("name",name);
+		mv.addObject("age",age);
+		mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+		return mv;
+	}
+
+	3.1.2,�����������-��������������⣺
+	��web.xml�ļ����������¹�������
+	<filter>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>utf-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>  <!--Ĭ��Ϊfalse,true��ʾ����֮ǰ�Ƿ������ַ�������������Ӧ���������ڵ��ַ�������  -->
+		</init-param>						  <!--false��ʾ��1�����֮ǰû�������ַ������������������õ��ַ�����
+											2�����֮ǰ�Ѿ����ú����ַ� ����ô�Ͱ���ǰ���ַ��� -->
+	</filter>
+	</filter>
+	<filter-mapping>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	3.1.3 У��������������������������ղ�������һ�µ�����
+	<form action="${pageContext.request.contextPath }/test/register.do" method="POST">
+    		����:<input type="text" name="pname"><br>  // ���������Ϊpname
+    		����:<input type="text" name="age"><br>
+    		<input type="submit" value="ע��">
+    	</form>
+
+	@Controller
+	@RequestMapping("/test") 
+	public class MyController {
+		
+		@RequestMapping("/register.do")  
+		public ModelAndView doFirst(@RequestParam("pname") String name,int age) {   // @RequestParam("pname")
+			System.out.println("name=" + name);
+			System.out.println("age=" + age);
+			
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("name",name);
+			mv.addObject("age",age);
+			mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+			return mv;
+		}
+	
+	3.1.4,�Զ������ʽ�������������
+	@RequestMapping("/register.do")  
+	public ModelAndView doFirst(Student student) {
+		System.out.println("name=" + student.getName());
+		System.out.println("age=" + student.getAge());
+		
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("student",student);
+		mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+		return mv;
+	}
+	Ҫ�󣺱���Ĳ�����Ҫ�������������ͬ��
+
+	3.1.5��������(��������)�Ľ��գ���Ҫ�Ǳ����������ôд
+	<form action="${pageContext.request.contextPath }/test/register.do" method="POST">
+    		����:<input type="text" name="name"><br>
+    		����:<input type="text" name="age"><br>
+    		ѧУ:<input type="text" name="school.sname"><br>
+    		Уַ:<input type="text" name="school.address"><br>
+    		<input type="submit" value="ע��">
+    	</form>
+
+
+	3.1.6 ·���������˽⣩���ӵ�ַ���н��ղ�����Ҫ��֤������һ���������һ������ʹ�� @PathVariable("pname")������ʽ
+	@RequestMapping("/{pname}/{age}/register.do")  
+	public ModelAndView doFirst(@PathVariable("pname") String name,@PathVariable int age) {
+		System.out.println("name=" + name);
+		System.out.println("age=" + age);
+		
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("name",name);
+		mv.addObject("age",age);
+		mv.setViewName("/WEB-INF/jsp/welcome.jsp");
+		return mv;
+	}
+
+
+	4,�����������ķ���ֵ��Model����Я�����ݣ�View������ת
+	 
+	4.1������ModelAndView��Я�����ݼ���תҳ��ʱʹ��
+		
+	4.2 ����String��������תҳ�治Я�����ݵ�  ���27-returnString-internal
+		@Controller  
+		@RequestMapping("/test")  
+		public class MyController {
+		
+		@RequestMapping("/some.do")  
+		public String doSome() {
+			������ͼ
+			return "/WEB-INF/jsp/welcome.jsp";
+		}
+		
+		����һ��д����  ���28-returnString-internal-2
+		������Spring�����ļ�����������:
+		<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+			<property name="prefix" value="/WEB-INF/jsp/" />
+			<property name="suffix" value=".jsp" />
+		</bean>
+		Ȼ�󷽷����������ã�
+		@Controller  
+		@RequestMapping("/test")  
+		public class MyController {
+			
+			@RequestMapping("/some.do")  
+			public String doSome() {
+				// �߼���ͼ
+				return "welcome";
+			}
+
+		
+		������ͼ�������ƣ�ʹ��BeanNameViewResolver��ͼ������
+		@Controller  
+		@RequestMapping("/test")  
+		public class MyController {
+			
+			@RequestMapping("/some.do")  
+			public String doSome() {
+				// ��ͼ��������
+				return "taobao";
+			}
+
+
+	4.3������void������Я�����ݣ�����ת(�����request����Ҳ������ת��)  ajax ���30-returnVoid-ajax
+
+	4.4������Object����Ҫ����jackson������jar��
+	4.4.1,������ֵ�ͣ���� 31-returnObject-number
+		<!--ע��mvcע������  -->
+		<mvc:annotation-driven />
+	
+	
+	4.4.2�������ַ����ͣ�
+	������ص��ַ��������Ļ����룬��ν����
+	@Controller
+	@RequestMapping("/test")
+	public class MyController {
+
+		@RequestMapping(value="/myAjax.do",produces="text/html;charset=utf-8")  // ���������������
+		@ResponseBody  // �����ص����ݷ��뵽��Ӧ����
+		public Object doAjax() {
+			
+			return "China����";
+		}
+		
+	
+	4.4.3�������Զ������ͣ� ���33-returnObject-custom
+
+
+	4.4.5,����Map���ϣ���� 34-returnObject-map
+
+	4.4.6������List���ϣ����35-returnObject-list
+	$(function(){
+   		$("button").click(function(){
+   			$.ajax({
+   				url:"test/myAjax.do",
+   				success:function(data){
+   					$(data).each(function(index){ // ����List
+   						alert(data[index].name + " " + data[index].age);
+   					});
+   				}
+   			});
+   		});
+   	});
+
+
+
+
+9,SpringMVC���ļ�����
+	
+
+	9.1������ת�����ض�������������Ĭ�϶�������ת��
+	
+	9.1.1������ModelAndViewʱ���ض���:
+		�ض���ҳ�棺
+			
+		@RequestMapping("/register.do")  
+		public ModelAndView doFirst(String name,int age) {
+		System.out.println("name=" + name);
+		System.out.println("age=" + age);
+		
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("pname",name); // ����Model�Ὣ���ݵ�������������������ض��򷢳�
+		mv.addObject("page",age);
+		mv.setViewName("redirect:/welcome.jsp");
+		return mv;
+	}
+	
+		�ض��򵽵�ҳ�棺
+		<!-- param.age�ĵײ�ִ�е��ǣ�request.getParameter("age")��age��ȡ�����ַ�����
+			reuqestScope.age�ĵײ�ִ�е��ǣ�request.getAttribute("age")��age��ȡ��������
+		 -->
+		name=${param.pname} <br> // ��ȡ����
+		age=${param.page} <br>
+
+		
+	9.1.2������Stringʱ���ض���(�ض�������һ������������)��
+		�ض���Controller��
+		@RequestMapping("/register.do")  
+		public String doFirst(String name,int age,Model model) {
+			model.addAttribute("pname", name); // �Ὣ���ݵ������������ض��򷢳�
+			model.addAttribute("page", age);
+			return "redirect:other.do";
+		}
+		
+		@RequestMapping("/other.do")  
+		public String doOther(String pname,int page) {
+			System.out.println("pname=" + pname); // ����Ҳ���Խ�������Ĳ���
+			System.out.println("page=" + page);
+			return "/welcome.jsp";
+		}
+		
+		// ע�⣺���ݵĲ��������Ƕ�����ΪHttpЭ���д��ݵĲ��������Ƕ���
+
+	
+	
+	9.2���쳣����
+	
+	9.2.1��SimpleMappingExceptionResolver�쳣��������ȱ�㣺�쳣��������ֻ����תҳ�棬���ܽ�����صĴ����ע�⣺������쳣ֻ���Ǵ������з������쳣
+		<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+			<property name="defaultErrorView" value="/errors/error.jsp" />  // ʹ�䷢���쳣ʱ��ת��error.jsp���ҳ�档
+			<property name="exceptionAttribute" value="ex" /> // ��ȡ�쳣����Ϣ��jspҳ�����������գ�${ex.message}
+		</bean>
+
+		�Զ�����쳣�����38-simpleMappingExceptionResolver
+		<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+			<property name="defaultErrorView" value="/errors/error.jsp" />
+			<property name="exceptionAttribute" value="ex" />
+			<property name="exceptionMappings">
+				<props>
+					<!-- key��ֵ���쳣��ȫ�޶����� -->
+					<prop key="com.bjpowernode.exceptions.NameException">/errors/nameError.jsp</prop>
+					<prop key="com.bjpowernode.exceptions.AgeException">/errors/ageError.jsp</prop>
+				</props>
+			</property>
+		</bean>
+
+			
+	9.2.2���Զ����쳣������Ҫʵ��HandlerExceptionResolver�ӿڣ� ���39-customExceptionResolver ע�⣺������쳣ֻ���Ǵ������з������쳣
+		
+
+
+	9.2.3���쳣����ע��@ExceptionHandler�� ������쳣�������Ǵ������е��쳣
+		@ExceptionHandler
+		public ModelAndView handlerException(Exception ex){
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("ex",ex);
+			
+			mv.setViewName("/errors/error.jsp");
+			
+			if(ex instanceof NameException){
+				// ִ��һЩ����
+				mv.setViewName("/errors/nameError.jsp");
+			}
+			
+			if(ex instanceof AgeException){
+				// ִ��һЩ����
+				mv.setViewName("/errors/ageError.jsp");
+			}
+	
+			return mv;
+		}
+		
+		// ����NameException�쳣
+		@ExceptionHandler(NameException.class)
+		public ModelAndView handlerNameException(Exception ex) {
+			ModelAndView mv = new ModelAndView();
+
+			mv.addObject("ex", ex);
+			mv.setViewName("/errors/nameError.jsp");
+			return mv;
+		}
+
+	
+	9.3������ת������SpringMVC֧�ֵ����ڸ�ʽ�ǣ�2018/03/12��Ҫ��֧��������ʽ��Ҫ�Զ���һ���࣬����ʵ��Converter�ӿ�
+		// Concerter�ӿ��е��������ͱ�ʾ��
+		// S����ʾԴ����
+		// T����ʾ�޵����ͣ���Ҫת��Ϊ��Ŀ����������
+		// public class MyDateConverter implements Converter<S, T> {
+
+		public class MyDateConverter implements Converter<String, Date> {
+
+			public Date convert(String source) {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				try {
+					return sdf.parse(source);
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+				return null;
+		}
+
+		SpringMVC����ת������ע��Ƚ��鷳��һ��3�����裺
+		
+		<!--ע������ת����  -->
+		<bean id="myDateConverter" class="com.bjpowernode.handlers.MyDateConverter"/>
+		
+		<!--ע��ת���������,��ͳһ����������͵�ת����  -->
+		<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+			<property name="converters" ref="myDateConverter"/>
+		</bean>
+		
+		<!--ע��MVCע������  -->
+		<mvc:annotation-driven conversion-service="convsersionService"/>
+
+		ע��������ô������ԭ����ʽ��2018/03/12�Ͳ���ʹ���ˡ�
+		
+		�����ṩ����������ڸ�ʽ����ķ�����ʹ��������ʽ
+		public class MyDateConverter implements Converter<String, Date> {
+
+		public Date convert(String source) {
+			SimpleDateFormat sdf = getDateFormat(source);
+			try {
+				return sdf.parse(source);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+		private SimpleDateFormat getDateFormat(String source) {
+			SimpleDateFormat sdf = new SimpleDateFormat();
+			if(Pattern.matches("^\\d{4}-\\d{2}-\\d{2}$", source)){
+				sdf = new SimpleDateFormat("yyyy-MM-dd");
+			}else if(Pattern.matches("^\\d{4}/\\d{2}/\\d{2}$", source)){
+				sdf = new SimpleDateFormat("yyyy/MM/dd");
+			}else if(Pattern.matches("^\\d{4}\\d{2}\\d{2}$", source)){
+				sdf = new SimpleDateFormat("yyyyMMdd");
+			}
+			return sdf;
+		}
+
+		
+		������ͷ�����������age=25a���޷�ת����int���͵��쳣��ʹ�õ��ǣ� �쳣����ע��@ExceptionHandler  ���쳣��TypeMismatchException��
+
+		������ػ��������ݲ���ʾ�����⣺���ݻ���  ���44-typeConverter-4
+		@ExceptionHandler(TypeMismatchException.class)
+		public ModelAndView exceptionResolver(HttpServletRequest request,Exception ex){
+			String age = request.getParameter("age");
+			String birthday = request.getParameter("birthday");
+			System.out.println("age=" + age);
+			System.out.println("birthday=" + birthday);
+			ModelAndView mv = new ModelAndView();
+			mv.addObject("age", age); // ������뵽����request����
+			mv.addObject("birthday", birthday);
+			mv.setViewName("/index.jsp");
+			return mv;
+		}
+
+		<form action="${pageContext.request.contextPath }/test/register.do" method="POST">
+			����:<input type="text" name="age" value="${age }"><br>
+			����:<input type="text" name="birthday" value="${birthday }"><br>
+			<input type="submit" value="ע��">
+    		</form>
+
+		���ҳ�治��ʾ���ܣ�
+		@ExceptionHandler(TypeMismatchException.class)
+		public ModelAndView exceptionResolver(HttpServletRequest request,Exception ex){
+			String age = request.getParameter("age");
+			String birthday = request.getParameter("birthday");
+			ModelAndView mv = new ModelAndView();
+			
+			// ���񵽵��쳣��Ϣ
+			String errorMSG = ex.getMessage();
+			if(errorMSG.contains(age)){
+				mv.addObject("ageErrors", "������������");
+			}
+			
+			if(errorMSG.contains(birthday)){
+				mv.addObject("birthdayErrors", "������������");
+			}
+			
+			mv.addObject("age", age); // ������뵽����request����
+			mv.addObject("birthday", birthday);
+			mv.setViewName("/index.jsp");
+			return mv;
+		}
+
+		<form action="${pageContext.request.contextPath }/test/register.do" method="POST">
+			����:<input type="text" name="age" value="${requestScope.age }">${ageErrors }<br>
+			����:<input type="text" name="birthday" value="${birthday }">${birthdayErrors }<br>
+			<input type="submit" value="ע��">
+		</form>
+		
+
+	9.4����ʼ��������
+	// �����������˼�ǣ�������ķ�����ȡ������֮ǰ������������Ĳ����ȹ�����������и�ʽת����ȱ�㣺ֻ�ܽ�������һ�ָ�ʽ�� ���46-initDateBinder
+	@InitBinder
+	public void initBinder(WebDataBinder binder){  // ������������ģ������ǹ̶��ġ�
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		// Date.class��ʾ��Ҫ������,true��ʾ����Ϊ�ա�
+		binder.registerCustomEditor(Date.class, new CustomDateEditor(df, true));
+	}
+	
+	�����������⣺�Զ���һ�����Ա༭���࣬����̳�PropertiesEditor�������滻�����new CustomDateEditor(df, true)�����47-initDateBinder-2
+	// �����������˼�ǣ�������ķ�����ȡ������֮ǰ������������Ĳ����ȹ�����������и�ʽת����
+	@InitBinder
+	public void initBinder(WebDataBinder binder){  // ������������ģ������ǹ̶��ġ�
+		binder.registerCustomEditor(Date.class, new MyDateEditor());
+	}
+
+
+	9.5��������֤(����˵���֤)��ʹ��Hibernate Validator���ǶԶ������֤    �ֻ��ŵ�������ʽ��"^1[34578]\\d{9}$   ���48-validation
+		��Ҫ�����jar������֮ǰ�Ļ���������validation-api-1.0.0.GA.jar��hibernate-validator-4.3.1.final-1.0.0.jar��jboss-logging-3.1.0.cr2.jar
+		
+		��֤�������ɼ�ע�᣺
+		<!--������֤��  -->
+		<bean id="myValidator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+			<property name="providerClass" value="org.hibernate.validator.HibernateValidator" />
+		</bean>
+		
+		<!--ע��MVCע������  -->
+		<mvc:annotation-driven validator="myValidator"/>
+		
+
+	9.6���ļ��ϴ�
+	
+	9.6.1���ϴ������ļ�
+		����������������µ�jar����commons-fileupload-1.3.3.jar��commons-io-2.6.jar
+		@RequestMapping("/upload.do")  
+			public String doUpload(MultipartFile img) throws Exception {   // MultipartFile�����ǹ̶���
+			
+			String path = "d:/images"; // �ļ���Ҫ��ǰ���ã�����ᱨ���
+			String fileName = img.getOriginalFilename(); // ��ȡ���ϴ��ļ���ԭʼ����
+			File file = new File(path,fileName);
+			img.transferTo(file);
+			return "/success.jsp";
+		}
+
+		
+		<!--id������ΪmultipartResolver  -->
+		<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" />
+		
+		<!--ע��ע������������MultipartFile�ӿڶ���  -->
+		<mvc:annotation-driven/>
+
+		String path = session.getServletContext().getRealPath("/images"); // ����webӦ�ø�·���µ�images�ļ����У�����һ�������·����
+		
+		�������뼰�ϴ���С���ã�
+		<!--id������ΪmultipartResolver  -->
+		<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+			<property name="defaultEncoding" value="utf-8" />  <!--����ϴ�ʱ��������  -->
+			<property name="maxUploadSize" value="1048576" />  <!-- �����ļ��ϴ���С�����ֵ����λΪ�ֽ�,1048576λ1M -->
+		</bean>
+		
+		ע�⣺ // ��ʹû��ѡ���ļ���Ȼ�����ϴ�img��ֵҲ���ǿյġ�
+
+		�����ļ��ϴ������ͣ�
+		if (img.getSize() > 0) {  // ����ļ�û���ϴ����СΪ0
+			// String path = "d:/images"; // �ļ���Ҫ��ǰ���ã�����ᱨ���
+			String path = session.getServletContext().getRealPath("/images");
+			String fileName = img.getOriginalFilename(); // ��ȡ���ϴ��ļ���ԭʼ����
+			if (fileName.endsWith("jpg") || fileName.endsWith("png")) {
+				File file = new File(path, fileName);
+				img.transferTo(file);
+			}
+		}
+		
+	9.6.2���ϴ�����ļ�
+		@RequestMapping("/upload.do")
+		public String doUpload(@RequestParam MultipartFile[] imgs, HttpSession session) // ʹ���������ҪУ������ @RequestParam
+				throws Exception {
+			// ��ʹû��ѡ���ļ���Ȼ�����ϴ�,imgs.length��ֵҲ��Ϊ0������Ҫ����
+			System.out.println(imgs.length);
+			for (MultipartFile img : imgs) {
+
+				if (img.getSize() > 0) { // ����ļ�û���ϴ����СΪ0
+					// String path = "d:/images"; // �ļ���Ҫ��ǰ���ã�����ᱨ���
+					String path = session.getServletContext().getRealPath("/images");
+					String fileName = img.getOriginalFilename(); // ��ȡ���ϴ��ļ���ԭʼ����
+					if (fileName.endsWith("jpg") || fileName.endsWith("png")) {
+						File file = new File(path, fileName);
+						img.transferTo(file);
+					}
+				}
+			}
+
+			return "/success.jsp";
+		}
+
+
+	9.7�����������ص㣩����������
+		�Զ���һ���������࣬����ʵ��HandlerInterceptor�ӿڡ�  ���  51-interceptor
+		<!--ע��������  -->
+		<mvc:interceptors>
+			<mvc:interceptor>
+				<mvc:mapping path="/**"/>
+				<bean class="com.bjpowernode.interceptors.OneInterceptor"/>
+			</mvc:interceptor>
+			<mvc:interceptor>
+				<mvc:mapping path="/**"/>
+				<bean class="com.bjpowernode.interceptors.TwoInterceptor"/>
+			</mvc:interceptor>
+		</mvc:interceptors>
+
+		// afterCompletion()����ִ�е�������preHandle()����ִ�в��ҷ���ֵΪtrue
+
+
+		Ȩ���������������Ϸ��û�����ִ�е����������������53-permissionInterceptor
+
+
+
+10��SSM���ϣ�
+	�����������jar���ڣ�E:\Tools\ssm\ssm����jar
+
+	10.1������ʽ���������54-ssm-xml
+
+
+	10.2��ȫע��ʽ������������ܶ���ע��,ע�⣺�ڿ�����һ���SpringMVC��Springע�⣬MyBatisһ�㲻��ע��ķ�ʽ��
+	
+	ע�⣺ע��ʽ�������ص㣡��
+
+-------------------------------------------------����Ϊ��������-------------------------------------------------------------------------
+
+11,�������ݣ�json���ݽ�����
+	1������jackson��jar����Controller�ķ�����ʹ��@RquestBody����springMVC��json��ʽ���ַ����Զ�ת����java�е�pojo��
+	2��ҳ��json��keyҪ����java��pojo����������
+	3��Controller��������pojo���͵Ķ�����ʹ��@ResponseBodyע�⣬springMVC���Զ���pojo����ת����json�ַ���
+	���磺
+	@ResponseBody
+	public Items json(@RequestBody Items items) throws Exception{
+		return items;
+	}
+
+
+12,ͳһ�쳣��������
+	SpringMVC�ṩͳһ���������ƣ�spingmvc��ǰ�˿������ڵ�����������ȥ����action����������з����쳣��
+	ǰ�˿����������쳣�����������쳣�����
+
+	ʵ��HandlerExceptionResolver�ӿڣ����´���ֻ�ǲ��������ݣ���ϸ��ҽҩ�ɹ���Ŀyycgproject -> yycg.base.process.exception.ExceptionResolverCustom
+	public class ExceptionResolverCustom implements HandlerExceptionResolver{
+		
+		private HttpMessageConverter<ExceptionResultInfo> jsonMessageConverter;
+		
+		//����handler��ִ�е�action�࣬����Ͱ�װ��һ����������Ӧurl������
+		@Override
+		public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
+				Exception ex) {
+			
+			//����쳣��Ϣ
+			ex.printStackTrace();
+			//ת��springmvc�ײ���󣨾��Ƕ�action�����ķ�װ����ֻ��һ��������,springmvc�����򷽷������ġ�
+			HandlerMethod handlerMethod = (HandlerMethod) handler;
+			//ȡ���˷���
+			Method method = handlerMethod.getMethod();
+
+			//����method�Ƿ���responsebodyע��
+			ResponseBody responseBody = AnnotationUtils.findAnnotation(method, ResponseBody.class);
+		
+		}
+		
+		ServletServerHttpResponse outputMessage = new ServletServerHttpResponse(response);
+		jsonMessageConverter.write(exceptionResultInfo, MediaType.APPLICATION_JSON, outputMessage);
+	}
+	
+	springmvc.xml�ļ����������ã�
+	<!--jsonת����  -->
+	<bean id="jsonMessageConverter"
+		class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+	</bean>
+	
+	<!-- ͳһ�쳣������ -->
+	<bean id="handlerExceptionResolver" class="yycg.base.process.exception.ExceptionResolverCustom">
+		<property name="jsonMessageConverter" ref="jsonMessageConverter"/>
+	</bean>
+
+	������web.xml��ҲҪ���ã���ǰ�˿�����֪��ȫ���쳣������idΪ��handlerExceptionResolver
+	
+	<!-- ����springmvc�Զ�ע����쳣������ -->
+	<init-param> //��DispatcherServlet�Ĳ���
+		<param-name>detectAllHandlerExceptionResolvers</param-name>
+		<param-value>false</param-value>
+	</init-param>
+
+
+13,springmvc�������ǻ��ڴ�����ӳ����HandlerMapping�������ء�
+    ���Բ���һ�ַ�������һ�����������Զ���ÿ��HandlerMapping�н���ע�ᡣ	
+	<!-- ������ -->
+	<mvc:interceptors>
+		<!--���������  -->
+		<!--�û����У���������  -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="yycg.base.filter.LoginInterceptor"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+
+--------------------------------------------------����Ŀʱ�Ĳ�������-----------------------------------------------------------
+
+18,springMVC��ת������ע�᣺
+	<!-- ע������ -->
+	<mvc:annotation-driven conversion-service="conversionService" />
+	
+	<!--�Զ���ע�����Ա༭��  -->
+	<bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+		<property name="converters">
+			<list>
+				<bean class="yycg.base.action.converters.DateConverter" /> <!--�Զ����ת����-->
+				<bean class="yycg.base.action.converters.StringTrimConverter" />
+				<bean class="yycg.base.action.converters.DatetimeConverter" />
+			</list>
+		</property>
+	</bean>
+
+
+19,springMVC������������
+	public class UserArgumentResolver implements WebArgumentResolver {
+
+	//methodParameter�洢action�����Ĳ�����Ϣ
+	//webRequest��springmvc��װ����ͨ���˶����ȡrequest��session�����ֵ
+	@Override
+	public Object resolveArgument(MethodParameter methodParameter,
+			NativeWebRequest webRequest) throws Exception {
+		
+		//���������������activeUser��session��ȡ��ǰ�û���Ϣ���õ�action�����β���
+		if(methodParameter.getParameterType().equals(ActiveUser.class)){
+			
+			//��session��ȡ��ǰ�û���Ϣ
+			ActiveUser activeUser = (ActiveUser) webRequest.getAttribute(Config.ACTIVEUSER_KEY, WebRequest.SCOPE_SESSION);
+			
+			return activeUser;//������ֵ��action�ķ����βθ�ֵ
+		}
+		
+		return UNRESOLVED;
+	}
+
+}
+
+�����Զ���Ĳ�����������
+	<!-- ע������ -->
+	<mvc:annotation-driven conversion-service="conversionService">
+		<mvc:argument-resolvers>
+			<bean class="yycg.base.action.converters.UserArgumentResolver"/> <!--�����Զ���Ĳ�������������  -->
+		</mvc:argument-resolvers>
+	</mvc:annotation-driven>
+
+
+
+	

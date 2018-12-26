@@ -1,0 +1,201 @@
+1，各个版本的浏览器创建HttpRequset对象：
+var xmlhttp;
+function verify(){
+    var userName = document.getElementById("username").value;
+
+
+    if(window.XMLHttpRequest){
+        //针对FireFox、Mozillar、Opera、Safari、IE7、IE8
+       xmlhttp = new XMLHttpRequest();
+
+        //针对某些特定版本的mozillar浏览器的BUG进行修正
+        if(xmlhttp.overrideMimeType){
+            xmlhttp.overrideMimeType("text/xml");
+        }
+
+    }else if(window.ActiveXObject){
+        //针对IE6、IE5.5、IE5
+        //两个可以用于创建XMLHTTPRequest对象的控件名称，保存在一个js的数组中
+        //排在前面的版本较新
+        var activexName = ["MSXML2.XMLHTTP","Microsoft.XMLHTTP"];
+        for(var i=0;i < activexName.length;i++){
+            try{
+                //取出一个控件名称进行创建，如果创建成功就终止循环
+                //如果创建失败，回抛出异常，然后可以继续循环，继续尝试创建
+                xmlhttp = new ActiveXObject(activexName[i]);
+                break;
+            }catch (e){
+
+            }
+        }
+
+    }
+
+    //确认XMLHttpRequest对象创建成功
+    if(!xmlhttp){
+        alert("XMLHttpRequest对象创建失败");
+    }else{
+        alert(xmlhttp);
+    }
+   
+    //2,注册回调函数,注意callback是函数名，后面不要加括号。如果加上括号就会把函数的返回值注册上，这是错误的。
+    xmlhttp.onreadystatechange = callback;
+
+    //3,设置连接信息
+    //第一个参数表示http的请求方式，支持所有http的请求方式，主要使用get和post
+    //第二个参数表示请求的url地址，get方式请求的参数在url中
+    //第三个参数表示采用异步还是同步方式交互，true表示异步
+    //xmlhttp.open("GET","AJAXServer?name=" + userName,true);
+
+    //4，发送数据，开始和服务器端进行交互
+    //同步方式下，send这句话会在服务器端数据回来后才执行完
+    //异步方式下，send这句话会立即完成执行
+    //xmlhttp.send(null);
+
+    //post方式请求
+    xmlhttp.open("POST","AJAXServer",true);
+    //POST方式需要自己设置http的请求头
+    xmlhttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    //POST方式发送数据
+    xmlhttp.send("name=" + userName);
+}
+
+//回调函数
+function callback(){
+    //5,接收响应数据
+    //判断对象的状态是否交互完成
+    if(xmlhttp.readyState == 4){
+        //判断http的交互是否成功
+        if(xmlhttp.status == 200){
+            //使用responseXML的方式来接收xml数据对象的DOM对象
+            var domObj = xmlhttp.responseXML;
+            if(domObj){  // 解决IE浏览器当服务端错误时(例如message>，少个"<")，接收不到responseXML的问题。
+                //dom中利用getElementsByTagName可以根据标签名获取元素节点，返回的是数组。
+                var messageNodes = domObj.getElementsByTagName("message");
+                if(messageNodes.length > 0){
+                    // var responseMessage =  messageNode[0].innerHTML;
+
+                    //message标签中的文本在dom中是message标签所对应的元素节点的子节点，firstChild可以获取到当前节点的第一个子节点。
+                    var textNode =  messageNodes[0].firstChild;
+
+                    var responseMessage = textNode.nodeValue;
+
+
+                    //将数据显示在页面上
+                    //通过dom的方式找到div标签所对应的元素节点
+                    var divNode = document.getElementById("result");
+                    //设置元素节点中的html内容
+                    divNode.innerHTML = responseMessage;
+                }else {
+                    alert("XML数据格式错误,原始文本内容为：" + xmlhttp.responseText);
+                }
+            }else {
+                alert("XML数据格式错误,原始文本内容为：" + xmlhttp.responseText);
+            }
+
+
+        }else {
+            alert("出错了");
+        }
+    }
+}
+
+2,XMLHttpRequest对象常用的几个方法及属性：
+	open(String method,String url,boolean asynch,String username,String password)
+	 参数：asynch值为true是为异步。password和username是提供http认证机制需要的用户名和密码。
+
+	send(context)：向服务器发出的请求如果是异步方式，该方法会立即返回。Content可以不指定，其内容可以是DOM对象，输入流或是字符串。
+
+	onreadystatechange：请求状态改变的事件触发器(readyState变化时会调用此方法)。通常是一个JavaScript函数
+
+	readyState：请求状态: 0=未初始化，1=open方法成功调用，2=服务器已经答应客户端的请求，3=交互中，Http头信息已经接受，响应数据尚未接收，4=完成，数据接收完成。
+
+	status：服务器返回的状态码。200表示“成功”，404表示“未找到”。
+
+	responseText：服务器返回的文本内容
+	
+	responseXML：服务器返回的兼容DOM的XML内容
+
+
+3,解决浏览器读取缓存的问题：使用时间戳(url不同就不会读取缓存	)
+	function verify(){
+		url = "AJAXServer?name=" + #("userName").val();
+		url = convertURL(url);
+		$.get(url,null,function(data){
+			$("#result").html(data);
+		});
+	}
+
+	function convertURL(url){
+		//获取时间戳
+		var timestamp = (new Date()).valueOf();
+		//将时间戳信息拼接到url上
+		if(url.indexOf("?") >= 0){
+			url = url + "&t=" + timestamp;
+		}else{
+			url = url + "?t" + timestamp;
+		}
+		return url;
+	}
+
+
+4，DOM:
+	html标签对应的dom中的元素节点，html中的文本内容都是dom中的文本节点，html中的注释信息对应dom书中的注释节点，
+	html标签中的属性对应dom树的属性节点(没有父节点、子孙节点，包含在一个元素节点中)。在html中根节点的下一级是HTML元素节点(根元素节点)，根节点不对应任何文本中的元素，是个虚拟的节点。
+	根节点与根元素节点的区别：根节点是DOM树的根。根元素节点重点在于元素，是所有元素节点的根。
+
+
+5，显示窗口：
+	function showwin() {
+	    var windNode = $("#win");
+	    //让div对应的窗口显示出来
+
+	    //方法1
+	    // windNode.css("display","block");
+
+	    //方法2
+	    // windNode.show("slow");
+
+	    //方法3，利用Jquery的fadeIn()方法
+	    windNode.fadeIn("slow"); //淡入淡出
+	}
+
+	#close{
+	    margin-left: 200px;
+	    cursor: pointer;  // 鼠标移动到出现小手
+	}
+
+	//隐藏窗口的方法
+	function hide() {
+	    var winNode = $("#win");
+	    //方法1
+	    // winNode.css("display","none");
+
+	    //方法2
+	    // winNode.hide("slow");
+
+	    //方法3
+	    winNode.fadeOut("slow");
+
+	}
+
+
+6,json：
+  eval(({"300001":{name:"上证指数",yes:3000.0,tod:2990.1,now:2976.35},"000001":{name:"浦发银行",yes:23.22,tod:23.5,now:23.84}}));
+  //注意外面用以层括号括起来();
+
+
+7,键盘表：
+	65-90 英文字母
+	向上键 38
+	向下键	40
+	回车键	13
+	退格键  8
+	delete键 46
+
+8,Jquery的一些方法：
+	blur() 失去焦点 注意：这是一个DOM对象的方法，不是JQuery对象的方法。
+	$("#word").get(0).blur();
+
+
+			      

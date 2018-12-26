@@ -1,0 +1,31 @@
+1，attr()与prop()方法：
+	相同点：	
+		都是添加属性或者获取属性。
+	
+	不同点：
+		对于HTML元素本身就带有的固有属性，在处理时，使用prop方法。
+		对于HTML元素我们自己自定义的DOM属性，在处理时，使用attr方法。
+		举例：
+		<a href="#" id="link1" action="delete">删除</a>
+		这个例子里<a>元素的DOM属性有“href、id和action”，很明显，前两个是固有属性，而后面一个“action”属性是我们自己自定义上去的，<a>元素本身是没有这个属性的。
+		因此获取action使用attr方式获取，其他需要通过prop方式获取
+
+2，一个遍历单选按钮(radio)回显选中的方法参考：
+	部分html代码：
+	<div class="col-sm-4" name="type">
+	    <label style="margin-right: 15px;">
+		<input type="radio" name="platformType" value="APP">APP端
+	    </label>
+	    <label>
+		<input type="radio" name="platformType" value="PC">PC端
+	    </label>
+	</div>
+
+	var platformType = $("input[name='platform']").val();
+        var type = $(".col-sm-4 > label");
+        $.each(type,function () {
+            var checked = $(this).find("[name='platformType']").val();
+            if(platformType==checked){
+                $(this).find("[name='platformType']").prop("checked",true);
+            }
+        })

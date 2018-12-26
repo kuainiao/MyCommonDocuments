@@ -1,0 +1,1039 @@
+1，监听服务：
+	监听服务是Oracle数据库之中使用最主要的一个服务，但是这个服务会经常出现错误，包括以后再工作
+	之中这个服务也会出现错误，所有下面给出常见的错误解决方案
+
+	错误一：注册表使用了优化被删除了相关项
+	对于每一个系统服务实际上都会在注册表之中有所保存
+
+	监听服务的注册项：HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\OracleOraDb11g_home2TNSListener
+	里面有一个"ImagePath"的选项，这个选项有可能会在使用优化软件的时候被项目自动删除。如果被删除的化，则应该
+	添加内容：D:\Oracle\product\11.2.0\dbhome_1\BIN\TNSLSNR 
+
+	错误二：网络环境发生改变
+	在Oracle里面，如果网络环境出现了改变之后，有可能原始配置的网络就无法正常的工作，此时必须手工的进行网络配置的修改。
+	网络环境的改变更多的就是指电脑名称的变更。
+	【我的电脑】-> 【属性】->【计算机名】->【更改主机名称】
+	当计算机名被修改之后Oracle 11g之前的版本监听服务就会无法启动，如果想解决此问题必须修改网络配置文件
+	配置文件路径：D:\Oracle\product\11.2.0\dbhome_1\NETWORK\ADMIN
+	有两个配置文件：listener.ora 和 tnsnames.ora,分别用记事本打开这两个文件，里面有一个关于计算机名的属性，把该属性修改成当前计算机的名称
+
+
+2，sqlplusw会存在数据的折行问题，以这个是默认的每行的数据大小，而现在可以通过两个命令进行调整
+	(1)设置每行显示的记录长度：set linesize 300;
+	(2)设置每页显示的记录长度：set pagesize 30;
+	这两个命令统一称为格式化命令。
+
+	
+	sqlplusw对于命令的编辑上不是很方便，如果正常的操作，命令写错了，使用方向键移到错误的位置上进行修改，但是在sqlpusw中，方向键
+	只能控制屏幕的移到。所有在sqlplusw中提供了ed和@指令，可以进行记事本的调用个执行。
+	使用ed调用记事本程序：
+		ed a，点击创建，但是使用ed打开记事本之后oracle中的sqlplusw窗口进入到阻塞状态，无法使用。
+
+	使用@执行程序：@a;
+
+	也可以在外部建立一个文件写sql语句，再用@调用，例如：@D:\demo.text  如果该文件的后缀名是".sql"，则可以直接这么调用：@D:demo
+
+3，sql语句：
+	查看当前用户：show user;
+	用户的切换登录：conn 用户名/密码[as sysDBA] 例如：conn sys/change_on_install as sysdba  (使用超级管理员登录) 注意:语句末尾没有分号";"
+	但是，一旦使用了sys链接之后，则无法直接查询emp表数据，会显示：表或视图不存在。
+	对于每一张表，都有其属于的用户，所以一张完整的表示“用户名.表名称”或者说是“模式名.表名称”,所以不同的用户想访问其他用户的表，则应该加上用户名
+	，即：select * from scott emp;
+
+	使用超级数据库管理员sys登录的话，可以通过命令手工的控制数据库实例的打开和关闭。
+	关闭数据库：shutdown immediate; 一旦关闭数据库之后用户无法直接连接sqlpusw命令。
+	当关闭数据库后登录时会显示如下错误：ORA-01034: ORACLE not available; ORA-27101: shared memory realm does not exist
+
+	此时可以先使用“/nolog”登录，之后使用管理员登录。命令如下：
+	A.启动oracle监听：cmd命令行窗口下，输入lsnrctl start
+	B.设置一下oralce的sid，cmd命令窗口中，set ORACLE_SID=orcl
+	C.再输入sqlplus  /nolog,回车;再输入 conn sys/change_on_install as sysdba;回车
+	D.再输入startup，回车.这步是启动oracle服务
+
+	复制文件：HOST copy d:\Link.sql d:\hello.text
+
+
+
+4,scott用户的表结构
+	查看所有的数据表的名称：select * from tab;
+		
+	查看表的结构：desc 表名称
+	NUMBER(7,2)表示的是有两位小数，5位整数，一共7位
+
+	四张表中bonus(工资表)暂时用不到
+
+5，简单查询：查询出一张表中的所有数据
+	DML(数据操作语言)：用于检索或者修改数据（主要学习）
+	DDL(数据定义语言)：用于定义数据的结构，创建、修改或者删除数据库对象
+	DCL(数据控制语言)：用于定义数据库用户的权限
+
+	在简单查询中也可以使用“||”链接查询的字段
+	select empno || ename from emp;
+	select empno||','||ename from emp;
+	
+	EMPNO||','||ENAME
+	--------------
+	7369,SMITH
+	7499,ALLEN
+	7521,WARD
+	7566,JONES
+	7654,MARTIN
+	7698,BLAKE
+	7782,CLARK
+	7788,SCOTT
+	7839,KING
+	7844,TURNER
+	7876,ADAMS
+
+	select '雇员编号是:' || empno||'的雇员姓名是：' || ename ||',基本工资是：' || sal || '，职位是：' || job || '!' 雇员信息  from emp;
+	单引号''表示的是字符串
+	
+	雇员信息
+	--------------------------------------------------------------------------------
+	雇员编号是:7369的雇员姓名是：SMITH,基本工资是：800，职位是：CLERK!
+	雇员编号是:7499的雇员姓名是：ALLEN,基本工资是：1600，职位是：SALESMAN!
+	雇员编号是:7521的雇员姓名是：WARD,基本工资是：1250，职位是：SALESMAN!
+	雇员编号是:7566的雇员姓名是：JONES,基本工资是：2975，职位是：MANAGER!
+	雇员编号是:7654的雇员姓名是：MARTIN,基本工资是：1250，职位是：SALESMAN!
+	雇员编号是:7698的雇员姓名是：BLAKE,基本工资是：2850，职位是：MANAGER!
+	雇员编号是:7782的雇员姓名是：CLARK,基本工资是：2450，职位是：MANAGER!
+	雇员编号是:7788的雇员姓名是：SCOTT,基本工资是：3000，职位是：ANALYST!
+	雇员编号是:7839的雇员姓名是：KING,基本工资是：5000，职位是：PRESIDENT!
+	雇员编号是:7844的雇员姓名是：TURNER,基本工资是：1500，职位是：SALESMAN!
+	雇员编号是:7876的雇员姓名是：ADAMS,基本工资是：1100，职位是：CLERK!
+
+	注意：别名上的内容不要使用单引号''括起来，而只有在select子句(它后面的语句就是其子句)之中出现的内容使用单‘’，如上面的所使用的单引号''。
+
+
+6，限定查询(where):
+	基本的关系运算符：>、>=、<、<=、!=(<>)、 between and、 like、 in、 is (not) null、and、or、not
+	
+	select * from emp where job='clerk'; 没查出来，因为在Oracle数据库中所有的数据是区分大小写的！！!
+	应该为：select * from emp where job='CLERK';
+
+	选择job不为'CLERK'的所有员工信息(三种写法)
+	select * from emp where job != 'CLERK';
+	select * from emp where job<>'CLERK';
+	select * from emp where not job='CLERK';
+
+	select * from emp where  not sal between 1500 and 3000; 这句话的意思是sal<1500 or sal>3000
+	
+	日期也可以使用between and：select * from emp where hiredate between '01-1月-81' and '31-12月-81';
+
+	select * from emp where not comm is null;  select * from emp where comm is not null; 这两句话的意思是一样的
+	
+	in的用法：select * from emp where empno in(7369,7566,7799);
+	not in 的用法：select * from emp where empno not in(7369,7566,7799);
+	如果现在使用了in操作符，查询的范围之中null，不影响查询。
+	select * from emp where empno  in(7369,7566,null);
+	
+	如果现在使用了 not in操作符，查询的范围之中null，不会有结果返回。not in 中出现了null则表示的就是查询全部数据。
+
+	like查询：
+	匹配单个字符：_; 1个
+	匹配任意多个字符：%; 0个 1个 多个
+	查询出ename带字母A的雇员：	select * from emp where ename like '%A%';
+	查询出ename不含字母A的雇员：	select * from emp where ename not like '%A%';
+	查询出ename第一个字母是A的雇员：select * from emp where ename like 'A%';
+	查询出ename第二个字母是A的雇员：select * from emp where ename like '_A%';
+	查询出ename倒数一个字母是A的雇员：select * from emp where ename like '%A';
+	查询出ename第一个和倒数第一个字母不为A的雇员：select * from emp where ename like '_%A%_';
+	like不一定只能在字符串数据上表示，也可以在任意的数据上表示：select * from emp where ename like '%1%' or hiredate like '%1%' or sal like '%1%';
+	
+	注意：如果like查询不设置任何限制的话('%%')则表示的是查询全部记录。
+
+
+7，排序操作：
+	order by 子句是写在所有的SQL语句最后的内容，而且对于排序有以下几点说明：
+	1，排序的时候可以指定多个排序的字段
+	2，排序的方式有两种：asc(升序) 默认为asc，desc(降序)
+
+	练习：查询出所有的雇员信息，按照工资由高到底排序，如果工资相同，则按照雇佣日期由早到晚排序？
+	select * from emp order by sal desc,hiredate;  多个字段排序
+
+
+8，单行处理函数：
+	每一个数据库有自己所支持的操作函数，这些就是单行函数。
+	Oracle中的单行函数有：字符函数，数字函数，日期函数，转换函数，通用函数。(转换函数，通用函数最重要，最麻烦)。
+
+	字符函数：upper lower initcap(首字母大写) length(求出字符串的长度) replace(进行替换) substr
+	Oracle之中有一点比较麻烦，即使要验证字符串，也必须编写完整的SQL语句，所以在Oracle数据库之中为了用户的查询方便，
+	所以专门提供了一个“dual”的虚拟表。
+	例如：select upper('hello') from emp;就会出现14条HELLO语句，而使用select upper('hello') from dual;只会出现一条HELLO语句。
+	
+	select * from emp where ename='&str';此时输入小写的smith，则肯定无法查询。所以这个时候只能由程序自己去适应，
+	加入一个函数：select * from emp where ename=upper('&str');则会自动把小写转换成大写
+
+	replace(替换)：select replace(ename,'A','_') from emp; 把ename中字母A替换成_
+	substr(截取)：语法一：substr(字符串或者列,开始点),表示从开始点一直截取到结尾。Oracle下标从0或1开始结果都是一样
+		      语法二：substr(字符串或者列,开始点,长度)，表示从开始截取到结束点，截取部分内容。Oracle下标从0或1开始结果都是一样,但是数是从1开始的。
+
+	练习：要求截取每个雇员姓名的后三个字母：常规做法：select ename,substr(ename,length(ename)-2) from emp;
+						新思路：设置负数，表示从后指定截取位置:select ename,substr(ename,-3) from emp;
+
+
+
+	数字函数一共有三个：
+		round():四舍五入的操作：select round(903.53567) from dual; 与select round(903.53567,0) from dual;结果是一样的
+		trunc:舍弃指定位置的内容：select trunc(903.53567) from dual;	select trunc(903.53567,1) from dual; 默认为0
+		mod:取模 select mod(5,2) from dual;
+
+	
+	日期函数：
+		取得当前日期：select sysdate from dual;
+		日期中也可以进行若干计算：
+		1，日期+数字=日期，表示若干天之后的日期。select sysdate + 365 from dual;
+		2，日期-数字=日期，表示若干天之前的日期
+		3，日期-日期=数字，表示的是两个日期间的天数。select ename,hiredate,sysdate - hiredate from emp;
+
+		注意：没有日期 + 日期的公式。！！！
+
+		除了以上三个公式之外，也提供了如下的四个操作函数：
+		1，last_day(日期)：求出指定日期(某月)的最后一天;  select last_day(sysdate) from dual; //31-1月 -18
+		2，next_day(日期,星期数)：求出下一个指定星期X的日期; select next_day(sysdate,'星期一') from dual; //22-1月 -18
+		3，add_months(日期,数字)：求出若干月之后的日期; select add_months(sysdate,4) from dual; //20-5月 -18     4表示的是月份  
+		select add_months(sysdate,4.7) from dual; 即使加的是小数也是按整数算。
+		4，months_between(日期1,日期2)：求出两个日期之间所经历的月份; select ename,months_between(sysdate,hiredate) from emp;  注意：大的日期在前   
+		months_between()/12一般用来求两者之间差多少年。
+
+		在所有的开发中，如果是日期的操作，建议使用以上的函数，因为这些函数可以避免闰年的问题。
+
+
+
+	转换函数(重点)：
+		完成数字(Number)、字符串(Varchar2)、日期(Date)这三种数据类型之间的转换，一共有三种转换函数
+		1,to_char(字符串 | 列,格式字符串)	将日期或者是数字转变为字符串显示
+		2,to_date(字符串,格式字符串)		将字符串变为Date类型数据
+		3,to_number(字符串)			将字符串变为数字显示
+
+
+		1,to_char(); 
+		日期默认是“日-月-年”显示，使用to_char()函数要使用 格式字符串：年(yyyy),月(mm),日(dd)。 select to_char(sysdate,'yyyy-mm-dd') from dual;
+		还可以分别拆开：select to_char(sysdate,'yyyy') year,to_char(sysdate,'mm') month,to_char(sysdate,'dd') day from dual;
+		但是这个时候显示的数据之中存在前导0(01,不足2位数在前面补0)，如何消除前导0呢？可以加入一个“fm”：
+		select to_char(sysdate,'fmyyyy-mm-dd') from dual; // 2018-1-22
+		显示时间：select to_char(sysdate,'yyyy-mm-dd hh:mi:ss') from dual; //2018-01-22 04:49:41 显示的是12小时制
+		显示24小时制：select to_char(sysdate,'yyyy-mm-dd hh24:mi:ss') from dual;
+
+		to_char()格式化数字:select to_char(4896468761,'999,999,999,999') from dual; // 4,896,468,761  注意：9表示一个数子的概念。
+		表示货币（常用）：select to_char(4896468761,'L999,999,999,999') from dual;  //$4,896,468,761  L表示的是local的含义，即当前语言环境下的货币符号。
+
+		2,to_date()
+			select to_date('1989-12-25','yyyy-mm-dd') from dual; 一般在更新数据时使用
+
+		3,to_number() 一般不用
+			select to_number('1') + to_number('2') from dual; //3
+			但是Oracle数据库很智能：select '1' + '2' from dual; // 不使用to_number也可以相加,所以一般不用。
+
+
+
+	通用函数（重点，面试常问）
+	通用函数主要有两个：nvl()、decode()，这两个函数是Oracle自己的特色函数。
+	nvl():处理空null  select ename,sal,comm,(sal+comm)*12 from emp; 与null值相加就都为null了。
+	这样处理空值null:select ename,sal,comm,(sal+nvl(comm,0))*12 from emp;
+
+	decode();decode()类似于if else，唯一不同的是decode()函数判断的是数值，而不是逻辑条件。
+	例如：要求显示全部雇员的职位，但是这些职位要求全部显示为中文
+	CLERK:办事员 SALESMAN:销售员 MANAGER:经理  ANALYST:分析员  PRESIDENT:总裁
+	这种判断肯定是逐行进行判断，所以这个时候必须采用decode。
+	decode()函数语法：decode(数值|列,判断值1,显示值1,判断值2,显示值2,判断值3,显示值3,...)
+	select empno,ename,job,decode(job,'CLERK','办事员','SALESMAN','销售员','MANAGER','经理','ANALYST','分析员','PRESIDENT','总裁') from emp;
+
+			
+9，多表查询：
+	当数据量大时，不宜使用select * from 表名;直接查询
+	应当这么做：select conut(*) from 表名;先查看有多少数据，如果数据量大时，就不要使用select 直接查询。
+
+	select * from emp,dept where emp.deptno=dept.deptno;这么操作是逐行查询，然后判断。当数据库的数据很大时，这种多表查询的性能很低。笛卡尔积依然存在。
+	给表起别名：select * from emp e,dept d where e.deptno=d.deptno;
+
+	在同一张表中查询(自连接)：select e.ename,e.job,d.ename as mgrname from emp e,emp d where e.mgr=d.empno; 
+
+	练习：查询出每个雇员的编号，姓名，基本工资，职位，领导的姓名，部门名称及位置。
+	select e.empno,e.ename,e.sal,e.job,e1.ename as mgrname,dname,loc from emp e,emp e1,dept d where e.mgr=e1.empno and e.deptno=d.deptno;
+
+	练习：查询每一个雇员的编号、姓名、工资、部门名称、工资所在公司的工资等级。
+	select e.empno,e.ename,e.sal,d.dname,s.grade salgrade from emp e,dept d,salgrade s where e.deptno=d.deptno and e.sal between s.losal and s.hisal;
+
+	使用decode进行求解：
+	select e.empno,e.ename,e.sal,d.dname,decode(s.grade,1,'第五等工资',2,'第四等工资',3,'第三等工资',4,'第二等工资',5,'第一等工资')  salgrade 
+	from emp e,dept d,salgrade s where e.deptno=d.deptno and e.sal between s.losal and s.hisal;
+
+	左、右链接：
+		select * from emp,dept where emp.deptno(+)=dept.deptno;
+		(+)=：+号放在等号的左边，表示右链接
+		=(+)：+号放在等号的右边，表示左链接
+
+	左链接：select e.ename,e.job,d.ename mgrname from emp e,emp d where e.mgr=d.empno(+);这种+号表示的是Oreacle独有的
+
+	SQL99语法：
+		交叉链接：用于产生笛卡尔积   select * from emp cross join dept;笛卡尔积并总是无用的，有些时候还是需要用到笛卡尔积。
+		
+		自然连接(naturaljoin)：自动找到匹配的关键字，消除笛卡尔积。select * from emp natural join dept; 但是并不是所有的字段都是关键字段，设置关键字段需要通过约束指定。
+		
+		join...using子句：select * from emp join dept using(deptno); 这两张表通过deptno消除笛卡尔积。
+
+		join...on子句：用户自己指定一个可以消除笛卡尔积的关联条件 select * from emp join dept on(emp.deptno=dept.deptno);
+
+		链接方向的改变：
+		左(外)链接：left outer join...on; 
+		右(外)链接：right outer join...on; select * from emp e right outer join dept d on(e.deptno=d.deptno);
+		全(外)链接：full outer join...on;  把两张表中所有的数据全显示。
+		在Oracle以外的数据库是使用SQL99语法。
+
+		多表查询的性能肯定不高！！！
+
+10，统计函数：
+	常见统计函数：
+	count()：查询表中的数据记录
+	avg()：求出平均值
+	sum()：求和
+	max()：求出最大值
+	min()：求出最小值
+
+	count()函数的主要功能是进行数据的统计，但是在进行数据统计的时候，如果一张表中没有统计记录，count也会返回数据
+	只是这个数据是"0". 例如：select count(*) from bonus; //0 bonus表中没有数据
+	但是使用其他的函数则有可能返回“null”，例如：select sum(sal) from bonus; //null
+
+	分组统计：分组中有一个不成文的规定：当数据重复的时候分组才有意义。
+	
+	1,分组函数可以在没有分组的时候单独使用，可是却不能出现其他的查询字段。例如：select sal,count(empno) from emp;  //错误语句,没有group by时，只能出现分组函数。
+	
+	2,如果进行分组后，则select子句之后，只能出现分组的字段和统计函数，其他的字段不允许使用。例如：
+	select job,deptno,count(empno),avg(sal) from emp group by job; //错误语句，出现了deptno,deptno不是分组的字段
+	select job,count(empno),avg(sal) from emp group by job; //语法正确
+
+	3,分组函数允许嵌套，但是嵌套之后的分组函数的查询之中不能再出现任何的其他字段(包括分组字段)。
+	例如：求平均工资中最高的工资：第一步：先求按工作分组的平均工资：select job,avg(sal) from emp group by job;  
+	第二步：求平均工资中的最大值：select job,max(avg(sal)) from emp group by job;  //错误语法，此时不能出现job
+	正确的语法为：select max(avg(sal)) from emp group by job;
+
+	练习：查询出每个部门的名称、部门的人数、平均工资
+	第一步：select d.dname,e.empno,e.sal from emp e,dept d where d.deptno=e.deptno;
+
+	第二步：将上面的表当成临时表
+	select
+		d.dname,count(e.empno),avg(e.sal)
+	from 
+		  emp e,dept d where d.deptno=e.deptno 
+	group by d.dname;   //这种查询只显示3个部门，而部门有四个，应该通过左右链接查询结果。
+	
+	
+	左链接：
+	select
+		d.dname,count(e.empno),nvl(avg(e.sal),0)     nvl()把空值null变为0
+	from 
+		  emp e,dept d where d.deptno=e.deptno(+)
+	group by d.dname;
+
+	练习：查询出每个部门的名称、位置、部门的人数、平均工资（多字段分组）
+	第一步：select d.deptno,d.dname,d.loc,e.empno,e.sal from emp e,dept d where d.deptno=e.deptno(+);
+	第二步(多字段分组)：select d.dname,d.loc,d.deptno,count(e.empno),avg(e.sal) from emp e,dept d where d.deptno=e.deptno(+) group by d.dname,d.loc,d.deptno;
+	以上就是多字段分组，但是不管是单字段还是多字段，一定要有一个前提，存在了重复数据。
+
+	练习：要求统计出每个部门的详细信息，并且要求这些部门的平均工资高于2000
+	select
+		d.deptno,d.dname,d.loc,avg(sal) avgsal
+	from 
+		emp e,dept d
+	where
+		e.deptno=d.deptno
+	group by
+		d.dname,d.deptno,d.loc;
+
+	使用where过滤查询：
+	select d.dname,d.loc,d.deptno,count(e.empno),nvl(avg(e.sal),0) myavgsal from emp e,dept d 
+	where d.deptno=e.deptno(+) and avg(sal)>2000 group by d.dname,d.loc,d.deptno; //错误，分组函数不能使用在where后面，
+	因为where子句的功能是从全部的数据之中取出部分的数据。而avg(sal)是使用where过滤出来的，再用where过滤就不合适。应该使用having过滤。
+
+	having查询：
+	select
+		d.deptno,d.dname,d.loc,avg(e.sal) 
+	from 
+		emp e,dept d
+	where
+		e.deptno=d.deptno
+	group by
+		d.dname,d.deptno,d.loc
+	having
+		avg(sal)>2000;
+
+	总结：where后面不能使用统计函数，group by后面可以使用统计函数。
+
+	综合练习题：显示非销售人员工作名称以及从事同一工作雇员的月工资的总和，并且要满足从事同一工作的雇员的月工资合计大于5000，输出结果按月工资的合计升序排列。
+	第一种方法：select job,sum(sal) from emp group by job having job !='SALESMAN' and sum(sal)>5000 order by sum(sal);
+	第二种方法：select job,sum(sal) from emp where job<> 'SALESMAN' group by job having sum(sal)>5000 order by sum(sal);
+
+
+11，子查询：
+	子查询多出现在where和from子句之中。
+	老师经验：where：子查询一般只返回单行单列、多行单列、单行多列的数据
+		  from：子查询只返回多行多列的数据，当做一张临时表。
+	练习：查询出工资要比smith还要高的全部雇员信息
+	
+	子查询返回结果是单行单列：
+	select * from emp where sal>(select sal from emp where ename='SMITH'); //select sal from emp where ename='SMITH';返回的结果是单行单列，可以在where后面使用。
+	练习：查询出高于平均工资的全部雇员信息
+	select * from emp where sal>(select avg(sal) from emp); //select avg(sal) from emp返回的结果是单行单列，可以用在where后面
+
+	子查询返回结果是单行多列（这种查询很少出现）：
+	select job,sal from emp where ename='ALLEN'; 该查询返回的结果是单行多列
+	select * from emp where (job,sal) = (select job,sal from emp where ename='ALLEN');
+
+	子查询返回的结果是多行单列：
+	如果子查询返回的结果是多行单列数据的话，这个时候就需要使用三种判断符进行判断：in、any、all。
+	
+	1,in：用于指定一个子查询的判断范围。
+	select sal from emp where job='MANAGER';  //返回结果是单行多列
+	select * from emp where sal in(select sal from emp where job='MANAGER');
+	在使用in的时候要注意not in，当在子查询之中有一个内容是null，not...in则不会查询出任何结果。因为当数据量很大时，not in(null)则返回的是全部的数据，会造成问题(不能正常浏览)。
+	不返回结果是限制会造成数据的不正常浏览。
+
+	2,any：与每一个内容相匹配，有三种匹配形式
+	(1)：= any
+	select * from emp where sal =any(select sal from emp where job='MANAGER');  //与in操作符完全一样
+	(2)：> any
+	select * from emp where sal >any(select sal from emp where job='MANAGER');  //比子查询中最小的结果还要大的数据
+	(3)：< any
+	select * from emp where sal <any(select sal from emp where job='MANAGER');  //比子查询中最大的结果还要小的数据
+
+
+	3,all：与每一个内容相匹配，有两种形式
+	(1)：> all
+	select * from emp where sal > all(select sal from emp where job='MANAGER');  //返回比子查询中最大值还要大的数据
+	(2)：<all
+	select * from emp where sal < all(select sal from emp where job='MANAGER');  ////返回比子查询中最小值还要小的数据
+
+
+	from子查询:
+	练习：查询出每个部门的编号、名称、位置、部门人数、平均工资
+	
+	不使用子查询(多字段分组)：
+	select 
+		d.deptno,d.dname,d.loc,count(e.empno),nvl(avg(e.sal),0)
+	from
+		emp e,dept d
+	where
+		e.deptno(+)=d.deptno
+	group by
+		d.deptno,d.dname,d.loc;
+	这种查询产生了笛卡尔积，一共产生了14*4=56条记录。
+
+	使用子查询：
+	select deptno,count(empno),avg(sal) from emp group by deptno; 返回的数据是多行多列
+	
+	//把上面的查询当成一张临时表
+	select
+		d.deptno,d.dname,t.sum,t.avgsal
+	from
+		dept d,(select deptno,count(empno) sum,avg(sal) avgsal from emp group by deptno) t
+	where
+		d.deptno=t.deptno(+);
+
+	这种查询方式数量分析：
+	1,子查询中统计的记录是14条记录，显示结果是3条记录
+	2,dept表中一共有4条记录
+	3,如果产生笛卡尔积的话只有3*4=12条记录，再加上雇员的14条记录，一共是14+3*4=26条记录，比用多字段查询的记录少。
+	开发中子查询是很常用的。
+
+
+
+12，数据的更新操作(与其他数据库不一样)
+	复制emp表：create table mytab as select * from emp;
+	insert语法：insert into 表名称([字段1],[字段2]) values(值1,值2);
+		
+	当增加数据时，以下的几种数据类型要分别处理：
+	1，增加数字：		直接便携数字，例如：123
+	2，增加字符串：		字符串应该使用""声明
+	
+	3，增加date类型:
+	(1)可以直接按照已有的字符串格式编写字符串，例如："17-12月-80";
+	(2)利用to_date函数将字符串变为date数据类型;
+	(3)如果设置的事件为当前系统时间，则使用sysdate;
+
+	增加字段有两种类型：完整型，简便型
+	完整型：insert into mytab(empno,ename,hiredate,sal,mgr,job,comm) values(8888,'张三',to_date('1960-08-17','yyyy-mm-dd'),8000,7369,'清洁工',1000);
+		insert into mytab(empno,ename,hiredate,sal,mgr,job,deptno) values(8889,'李四',sysdate,3000,7369,'清洁工',30);
+	
+	简便型：insert into mytab values(8889,'王五','清洁工',7369,sysdate,3000,null,30);（不推荐使用）
+
+	更新数据语法：update 表名称 set 更新字段1=更新值1,更新字段2=更新值2...[where 更新条件];
+	update mytab set sal=5000,comm=2000,job='MANAGER',hiredate=sysdate where empno=7369; 
+	
+	
+	update mytab set sal=5000*1.5;//如果不加限制条件，则意味着更新全部的数据，当数据量很大时，耗费的时间长，性能也会降低。
+
+	删除数据：delete from 表名 where 删除条件
+
+	练习：删除在1987年雇佣的雇佣
+	delete from mytab where to_char(hiredate,'yyyy')=1987;
+
+	练习：删除表中的全部记录
+	delete from mytab;
+
+13，事务处理：
+	session：所有的事务都是针对一个session进行的，在Oracle数据库之中，把每一个链接到数据库上的用户都称为一个session，每一个session之间
+		 彼此独立，不会有任何通讯，而每一个session独享自己的事务控制，而事务控制之中使用两个命令：
+		 事务的回滚：rollback，更新操作回到原点。
+		 事务的提交：commit，真正的发出更新的操作，一旦提交之后无法回滚。
+
+		 但是这样一来也会出现一些问题：当某一个session在更新数据表的时候还没有提交事务，其他session是无法更新的，必须等待之前的session提交后才可以。
+		 
+		 所有的数据更新一定都会受到事务的控制。
+
+
+14，数据伪列：
+	数据伪列指的是用户不需要处理的列，而是由Oracle自行维护的数据列，在Oracle之中有两个数据伪列：rownum,rowid
+	rownum：从单词含义上讲是行号。实际上rownum为每一个显示的记录都会自动的随着查询生成行号，例如：select rownum,empno,ename,job,hiredate,sal from emp;
+	行号是动态的重新生成的。有了rownum之后，就可以实现数据的部分显示，例如：select rownum,empno,job,hiredate,sal from emp where rownum<=5;
+
+	练习：查询6-10条记录
+	select rownum,empno,job,hiredate,sal from emp where rownum between 6 and 10; //rownum不是真实列，不能这样使用。
+	而要实现用rownum查询6-10条记录的思路是：先查询前10条记录，之后再查询在显示后5条记录，要依靠子查询完成。
+	select rownum rn,empno,job,hiredate,sal from emp where rownum<=10; //查询前10条记录
+	select * from (select rownum rn,empno,job,hiredate,sal from emp where rownum<=10) t where t.rn>5;
+
+	按照上面的思路，下面就可以给出程序的分页功能。
+	当前所在页(currentPage) 为1;
+	每页显示的记录长度(lineSize)为5;
+	第一页：select * from (select rownum rn,empno,job,hiredate,sal from emp where rownum<=5) t where t.rn>0;
+	第二页：select * from (select rownum rn,empno,job,hiredate,sal from emp where rownum<=10) t where t.rn>5;
+	第三页：select * from (select rownum rn,empno,job,hiredate,sal from emp where rownum<=15) t where t.rn>10;
+	第n页： select * from (select rownum rn,empno,job,hiredate,sal from emp where rownum<=(页数*页长度)) t where t.rn>(页数-1)*页长度;
+
+	rowid:表示的是每一行数据保存的物理地址的编号，
+	例如：select rowid,deptno,dname,loc from dept;
+	
+	ROWID                  DEPTNO DNAME          LOC
+	------------------ ---------- -------------- -------------
+	AAAR3qAAEAAAACHAAA         10 ACCOUNTING     NEW YORK
+	AAAR3qAAEAAAACHAAB         20 RESEARCH       DALLAS
+	AAAR3qAAEAAAACHAAC         30 SALES          CHICAGO
+	AAAR3qAAEAAAACHAAD         40 OPERATIONS     BOSTON
+
+	每一条rowid都不会重复，所以即便表中所有列的数据内容都重复了，rowid也是不会重复的。
+	拿一个rowid进行分析：AAAR3qAAEAAAACHAAA
+	数据对象号：AAAR3q
+	相对文件号：AAE
+	数据块号：AAAACH
+	数据行号：AAA
+
+	面试题：请删除表中的重复记录？
+	往dept表中增加如下数据
+	insert into dept(deptno,dname,loc) values(21,'RESEARCH','DALLAS');
+	insert into dept(deptno,dname,loc) values(31,'SALES','CHICAGO');
+	insert into dept(deptno,dname,loc) values(32,'SALES','CHICAGO');
+	insert into dept(deptno,dname,loc) values(41,'OPERATIONS','BOSTON');
+	insert into dept(deptno,dname,loc) values(42,'OPERATIONS','BOSTON');
+	insert into dept(deptno,dname,loc) values(43,'OPERATIONS','BOSTON');
+
+	要求：删除重复的数据，显示结果为之前的dept表。
+	解答：
+	1，先按照查询的方式做，首先找到所有重复的数据，重复的数据就比较容易了，按照部门名称及位置分组，之后统计个数，如果个数大于1，则表示重复。
+	select dname,loc,min(rowid) from dept group by dname,loc having count(deptno)>1; //重复的部门
+	
+	得到如下结果
+	RESEARCH	DALLAS	AAAR3qAAEAAAACEAAA
+	SALES		CHICAGO	AAAR3qAAEAAAACEAAB
+	OPERATIONS	BOSTON	AAAR3qAAEAAAACEAAD
+	数据插入的早，rowid就小，所以下一步首先必须确定的是不能删除的rowid，
+
+	select dname,loc,min(rowid) from dept group by dname,loc;
+	查询结果如下，下面的数据是不删除的
+	RESEARCH	DALLAS		AAAR3qAAEAAAACEAAA
+	SALES		CHICAGO		AAAR3qAAEAAAACEAAB
+	OPERATIONS	BOSTON		AAAR3qAAEAAAACEAAD
+	ACCOUNTING	NEW YORK	AAAR3qAAEAAAACHAAA
+
+	delete from dept where rowid not in(select min(rowid) from dept group by dname,loc);
+
+
+
+15，表的创建及管理：
+	创建对象：create 对象名称...
+	删除对象：drop 对象名称...
+	修改对象：alert 对象名称...
+
+	常用的数据字段：
+	字符串	VARCHAR2(n) 其中n表示的是字符串所能保持的最大长度，基本上保存200个左右的内容。
+	整数	NUMBER(n) 表示最多为n位数的整数，有时候也可以用INT代替
+	小数	NUMBER(n,m) 其中m为小数位，n-m为整数位，有时也可以使用FLOAT代替
+	日期	DATE	存放日期-时间
+	大文本	CLOB	可以存储海量文字(4G)，例如存储《三国演义》等。
+	大对象	BLOG	存放二进制数据，例如：电影、MP3、图片、文字
+	一般在开发中使用最多的是VARCHAR2(其他数据库是VARCHAR)、NUMBER、DATE、CLOB，而对于BLOG字段一般使用较少。
+
+	表的创建：
+	create table 表名称(
+		字段1	数据类型	[default 默认值],
+		字段2	数据类型	[default 默认值],
+		字段3	数据类型	[default 默认值]
+	);
+	
+	例如：
+	create table member(
+		name varchar2(50) default '无名氏',
+		age  number(3),
+		birthday date default sysdate,
+		content clob
+	);
+	
+	向上面的表中添加数据
+	insert into member(name,age,birthday,content) values('张三',20,to_date('1990-08-12','yyyy-mm-dd'),'一个好人');
+	insert into member(age,content) values(20,'一个好人'); name,btithday使用的是默认值
+	
+	复制表语法：create table 复制表名称 as 子查询
+	练习：复制一张只包含20部门雇员信息的表
+	create table emp20 as select * from emp where deptno=20;
+
+	练习：将emp表的表结构复制出来，不要数据。(写一个永远满足不了的条件即可。)
+	create table empnull as select * from emp where 1=2;
+
+	为表重命名：
+	在Oracle数据库之中，所有的数据实际上都是数据字典保存的，例如，在之前曾经使用过如下的一种查询：
+	select * from tab; 这就是一个数据字典，而在Oracle之中，提供了三种类型的数据字典，最常用的是：dba、user_
+	一个user_table数据字典：
+	select * from user_tables;
+
+	修改表名称语法：rename 旧的表名称 to 新的表名称;(Oracle数据库独有的特性，了解即可。)
+	
+	截断表(了解)
+	当进行delete from person;操作删除时，有一个特点：可以进行事务的回滚，也就是删除之后并不会释放数据的资源，
+	如果现在希望彻底释放掉一张表所占用的全部资源(表空间、索引等等)就可以使用截断表的语法，此语法如下：
+	truncate table 表名称;
+	例如：truncate table person;(Oracle独有，了解即可)
+
+	表的删除：指的是数据库对象的删除。
+	语法：drop table 表名称;
+	例如：drop table person;
+
+	闪回技术(了解)：在Oracle 10g之后，为了预防用户的误删除表操作，专门提供了回收站的功能，用户所删除的表默认情况下会在一个回收站之中保存。
+			用户可以通过回收站，进行表的恢复，所有此技术称为闪回(FLASHBACK);
+
+	查看回收站：show recyclebin; 所有已经删除的表都在回收站之中保存
+	恢复表语法：flashback table 表名称 to before drop;
+	例如：flashback table person to before drop;
+
+	当然，现在也可以直接删除掉回收站中的一些数据表，语法如下：
+	purge table 表名称;
+	例如：purge table emp20;
+	
+	清空回收站(重点)：
+	purge recyclebin;
+
+	删除一张表，而又不希望其进入到回收站之中，则可以在删除的时候增加purge;
+	drop table person purge;
+
+
+16,修改表结构(了解)
+	create table member(
+		mid number,
+		name varchar2(50)
+	);
+	向表中添加数据
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(2,'李四');
+	insert into member(mid,name) values(3,'王五');
+	
+	向表中增加字段语法： alter table 表名称 add (列名称 数据类型 [defalut 默认值]);
+	例如：alter table member add (age number(3),birthday date default sysdate); 
+
+	修改已有的表结构语法：alter table 表名称 modify (列名称 数据类型 [defalut 默认值]);
+	例如：alter table member modify (name varchar2(100) default '无名氏');
+	再向表中添加数据：insert into member(mid) values(4);
+
+	注意：修改表结构的操作，能不使用就尽量不使用。从大型数据库上讲，性能最好的数据库是IBM的DB2数据库，但是DB2本身有一个平台的限制问题。
+	      跨平台性能最好的大型数据库是Oracle。在DB2中数据库是不允许修改表的结构的，即表建立完成后就不能修改。在开发中也尽可能不去修改表的结构。
+
+	面试题：现在要求建立一张nation表，表中有一个nation字段，里面保存四条记录：中国、美国、巴西、荷兰，要求通过查询实现如下的操作效果：
+		中国	美国
+		中国	巴西
+		中国	荷兰
+		美国	中国
+		美国	巴西
+		美国	荷兰
+		...     ...
+		依此类推
+		分析：本题目的主要目的并不是在于查询的编写上，而是在于规范化数据创建脚本的格式，以后只要碰到了类似的要求，首先
+		      必须要编写一个数据库创建脚本，这个脚本的要求如下：
+		      1，文件的后缀名称必须是：“*.sql”。
+		      2，先删除相应的表名称。
+		      3，编写创建表的语句。
+		      4，增加测试数据。
+		      5，提交事务
+
+		 本题答案(依靠笛卡尔积完成，属于表的自身约束)：
+		 select n1.name,n2.name from nation n1,nation n2 where n1.name <> n2.name;
+
+
+17，约束：
+	约束的功能：保证表中的数据合法性，按照约束的分类，一共有5中约束：非空约束、唯一约束、主键约束、检查约束、外键约束。
+	
+	(1)非空约束（not null）：NK
+	drop table member purge;
+	create table member (
+		mid number,
+		name varchar(50) not null
+	);
+
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(null,'张三');
+	insert into member(name) values('张三');
+	insert into member(mid,name) values(9,null);  //不能插入
+	insert into member(mid) values(9);  //不能插入
+
+
+	(2)唯一约束(UNIQUE)：UK
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		email varchar2(50) unique
+	);
+
+	插入数据：
+	insert into member(mid,name,email) values(1,'张三','zhangsan@163.com');
+	insert into member(mid,name) values(2,'李四');
+	insert into member(mid,name,email) values(3,'王五','zhangsan@163.com');  //不能插入，email重复了
+
+	指定约束名称：作用当出现错误时可以很方便的看到错误的位置：例如：违反唯一约束条件 (SCOTT.UK_EMAIL)
+	给约束名字起名的格式：约束类型_字段
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		email varchar2(50),
+		constraint UK_email unique(email)
+	);
+
+	(3)主键约束(Primary Key)：PK
+	drop table member purge;
+	create table member(
+		mid number primary key,
+		name varchar2(50) not null	
+	);
+	增加数据:
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(null,'张三');  //无法插入
+	insert into member(mid,name) values(1,'张三');
+
+	为主键约束起名：
+	drop table member purge;
+	create table member(
+		mid number,
+		constraint PK_mid primary key(mid),
+		name varchar2(50) not null	
+	);
+
+	复合主键：
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		constraint PK_mid_name primary key(mid,name)
+	);
+	在复合主键的使用之中，只有两个字段的内容都一样的情况下，才被称为重复数据。
+	例如：
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(1,'李四');  
+	insert into member(mid,name) values(2,'李四');
+	insert into member(mid,name) values(1,'李四');  //不能插入
+	insert into member(mid,name) values(null,'李四'); //不能插入
+	在开发中，一般不使用复合主键，只用一个主键。
+
+	(4)检查约束(Check)：CK
+	检查约束指的是为表中的数据增加一些过滤条件。
+	例如：
+	• 设置年龄的时候范围是：0-250
+	• 设置性别的时候范围是：男，女
+	
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		sex varchar2(10) not null,
+		age number(3),
+		constraint PK_midprimary primary key(mid),
+		constraint CK_sex Check(sex in ('男','女')),
+		constraint CK_age Check(age between 0 and 250)
+	);
+	增加数据：
+	insert into member(mid,name,sex,age) values(1,'刘三','男','200');
+	insert into member(mid,name,sex,age) values(2,'刘四','中','200');  //不能插入
+	insert into member(mid,name,sex,age) values(2,'刘五','女','251');  //不能插入
+
+
+	(5)主-外键约束（核心重点）
+	上面的四种约束都是在单张表中进行的，而主-外键约束是在两张表中进行的，这两张表是存在父子关系，
+	即子表中的某个字段的取值范围是由父表所决定的。
+
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		constraint PK_mid primary key(mid)
+	);
+	drop table book purge;
+	create table book(
+		bid number,
+		title varchar2(50) not null,
+		mid number,
+		constraint pk_bid primary key(bid)
+	);
+
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(2,'李四');
+	insert into book(bid,title,mid) values(101,'Java开发',1);
+	insert into book(bid,title,mid) values(102,'Java Web开发',2);
+	insert into book(bid,title,mid) values(103,'EJB开发',1);
+	insert into book(bid,title,mid) values(105,'Android开发',1);
+	insert into book(bid,title,mid) values(107,'AJAX开发',2);
+	
+	
+	select m.mid,m.name,count(b.mid) from member m,book b where m.mid=b.mid group by m.mid,m.name;
+
+	select m.mid,m.name,b.title from member m,book b where m.mid=b.mid;
+
+	insert into book(bid,title,mid) values(108,'PhotoShop使用手册',3);
+	insert into book(bid,title,mid) values(109,'FLEX开发手册',3);
+	
+	使用外键约束：
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		constraint PK_mid primary key(mid)
+	);
+	drop table book purge;
+	create table book(
+		bid number,
+		title varchar2(50) not null,
+		mid number,
+		constraint pk_bid primary key(bid),
+		constraint fk_mid foreign key(mid) references member(mid)   //添加外键
+	);
+	依次加入数据
+	insert into member(mid,name) values(1,'张三');
+	insert into member(mid,name) values(2,'李四');
+	insert into book(bid,title,mid) values(101,'Java开发',1);
+	insert into book(bid,title,mid) values(102,'Java Web开发',2);
+	insert into book(bid,title,mid) values(103,'EJB开发',1);
+	insert into book(bid,title,mid) values(105,'Android开发',1);
+	insert into book(bid,title,mid) values(107,'AJAX开发',2);
+
+
+	insert into book(bid,title,mid) values(108,'PhotoShop使用手册',3); //不能插入
+	insert into book(bid,title,mid) values(109,'FLEX开发手册',3); //不能插入
+	使用外键的最大好处是控制了表中某些数据的取值范围，但是同样带来了不少的问题：
+	1，删除数据的时候，如果主表中的数据有对应的子表数据，则无法删除。
+	例如在上面的表中删除member表中mid为1的数据
+	delete from member where mid=1; 输出：ORA-02292: 违反完整约束条件 (SCOTT.FK_MID) - 已找到子记录
+	此时只能先删除子表记录，在删除父表记录。
+	delete from book where mid=1;
+	delete from member where mid=1; 但是这种删除不方便。
+ 
+	级联删除：
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		constraint PK_mid primary key(mid)
+	);
+	drop table book purge;
+	create table book(
+		bid number,
+		title varchar2(50) not null,
+		mid number,
+		constraint pk_bid primary key(bid),
+		constraint fk_mid foreign key(mid) references member(mid) on delete cascade
+	);
+	此时删除主表:delete from member where mid=1;
+	子表对应的mid=1也都会删除掉。
+	此种删除太霸道。
+	
+	现在要求：删除数据时候，让子表中对应的数据设置为null。
+	drop table member purge;
+	create table member(
+		mid number,
+		name varchar2(50) not null,
+		constraint PK_mid primary key(mid)
+	);
+	drop table book purge;
+	create table book(
+		bid number,
+		title varchar2(50) not null,
+		mid number,
+		constraint pk_bid primary key(bid),
+		constraint fk_mid foreign key(mid) references member(mid) on delete set null
+	);
+	此时对主表执行删除操作：delete from member where mid=1;
+
+	父表，子表被主外键约束时，当执行表删除操作时，应先删除子表才能删除父表。在Oracle之中专门提供了一个强制性删除表的操作，
+	即：不再关系约束，在删除的时候写上一句“cascade constraint”
+	例如：drop table member cascade constraint purge; 此时子表还在。
+	合理的做法是：先删除子表再删除父表。
+
+
+	(6)修改约束
+	添加约束：alter table 表名称 add constraint 约束名称 约束类型(字段);
+	删除约束：alter table 表名称 drop constraint 约束名称 约束类型;
+	在五种约束当中，非空约束not null作为一个特殊的约束无法修改。
+	drop table member cascade constraint purge;
+	create table member(
+		mid number,
+		name varchar2(50),
+		age number(3)
+	);
+	为member表增加主键约束：alter table member add constraint pk_mid primary key(mid);
+	insert into member(mid,name,age) values(1,'张三',30);
+	insert into member(mid,name,age) values(2,'张三',300);
+	增加检查约束：alter table member add constraint ck_age check(age between 0 and 250); //ORA-02293: 无法验证 (SCOTT.CK_AGE) - 违反检查约束条件
+	删除主键约束：alter table member drop constraint pk_mid;
+	跟表结构一样，约束最好也不要修改，而且记住，表建立的同时一定要将约束定义好，以后的使用之中建议就不要去修改。
+	
+	查询有哪些约束：select * from user_constraints; 这种查询的约束只是告诉名字，然而并没有告诉在哪个字段上有此约束。
+	select owner,constraint_name,table_name from user_constraints;
+	使用另外一张数据字典“user_cons_columns”
+	select * from user_cons_columns; 可以查询到约束在哪个字段。
+	select owner,constraint_name,table_name,column_name from user_cons_columns;
+	格式化显示：col owner for a15;
+	格式化显示：col constraint_name for a15;
+	格式化显示：col table_name for a15;
+	格式化显示：col column_name for a15; //这样显示查看效果好点。
+
+
+18，集合操作(理解)
+	UNION：链接两个查询，相同的部分不显示
+	UNIONALL：链接两个查询，相同的部分显示
+	INTERSECT：返回两个查询中的相同部分
+	MINUS：返回两个查询中的不同部分
+
+	分别求出领取comm和不领取comm的平均工资
+	select 'comm',avg(sal) from emp where comm is null
+		union
+	select 'comm',avg(sal) from emp where comm is not null;
+
+19，序列：
+	创建语法：create sequence 序列名称;
+	序列中的两个属性(伪列)：nextval,currval
+	序列的操作一定要手工进行控制
+	例如：
+	-- Create sequence 
+	create sequence SEQ_SYS_LOG
+	minvalue 1
+	maxvalue 999999999
+	start with 81
+	increment by 1
+	cache 20;
+	
+	CurrVal：返回 sequence的当前值 。
+	NextVal：增加sequence的值，然后返回 增加后sequence值。
+
+	select SEQ_SYS_LOG.currval from dual; 得到当前的序列值
+
+	在Sql语句中可以使用sequence的地方： 
+	    - 不包含子查询、snapshot、VIEW的 SELECT 语句 
+	    - INSERT语句的子查询中 
+	    - INSERT语句的values中 
+	    - UPDATE 的 SET中
+
+	    如在插入语句中:
+	    insert into 表名(id,name)values(seqtest.Nextval,'sequence 插入测试');
+
+	    注：
+	    - 第一次NEXTVAL返回的是初始值；随后的NEXTVAL会自动增加你定义的INCREMENT BY值，然后返回增加后的值。
+
+	    - CURRVAL 总是返回当前SEQUENCE的值，但是在第一次NEXTVAL初始化之后才能使用CURRVAL，否则会出错。
+
+
+
+20，视图（重点）
+	视图的创建语法：create view 视图名称 as 子查询
+	
+	create view myview as select * from emp where deptno=20;
+	create or replace view myview as select * from emp where deptno=20; //创建一张或替换一张已经存在的视图
+	
+	选项一：with check option
+	create or replace view myview as select * from emp where deptno=20 with check option;
+	此时执行视图的更新操作，就无法更新。
+
+	选项二：with read only
+	create or replace view myview as select * from emp where deptno=20 with read only;
+
+	如果视图的查询语句是统计操作(count(),min())，则根本就不能更新。
+
+
+21,同义词(SYNONYM)(了解)
+	dual(虚拟表)，这张表是属于SYS用户的，不同的用户想要访问其他用户的表则需要写上“用户名.表名”但是scott用户却能直接访问。
+	而不是使用SYS.dual，这个实际上就是同义词的应用。
+	
+	同义词的创建语法：create [public] synonym 同义词的名称 for 用户名.表名称;
+	
+	练习：创建一个同义词为myemp，此同义词指向scott.emp。
+	create synonym myemp for scott.emp;
+
+	创建公共同义词：create [public] synonym myemp for scott.emp; //其他用户也能查看
+
+
+
+22，索引（理解）
+	主键约束：如果一张表中的列上存在了主键约束则会自动创建索引
+	手工创建：create index emp_sal_ind on emp(sal);
+	索引一般只是用在不会频繁修改的表中。
+
+
+23，DCL,用户管理（了解）由DBA负责，工作中用不到。
+	DCL:主要表示的是数据库的控制语句，控制的就是操作权限。主要有两个语法：GRANT、REVOKE
+
+	创建新用户则首先必须具备管理员权限的sys、system两个用户操作
+	1,conn sys/change_on_install as SYSDBA;
+	2,create user dog identified by wangwang; //创建一个dog的用户，密码为wangwang。此时新用户还不能登录，要给予权限。
+	将create session 的权限给dog用户:
+	3,grant create session to dog; //此时新用户可以登录成功
+	虽然此时新用户可以登录了，但是还不能创建序列、表等。将创建表的权限给予dog
+	4，grant create table to dog  //此时只是将数据表的创建权限给了用户，但是并没有把表空间的操作权限给dog用户。仍然无法创建表，因为表没有地方保存。
+
+	为了一步到位给予新用户创建表的权限，在Oracle之中为用户提供了许多的角色，每一个角色会包含多个权限，
+	主要有两个角色：connect、resource
+	将上面两个角色给予新用户：
+	grant connect,resource to dog  //此时新用户dog就可以创建表了。
+
+	管理员修改普通用户的密码：
+	alter user dog identified by miaomiao;  //修改密码为miaomiao
+	让密码失效：alter user dog password expire;
+	锁定用户：alter user dog account lock;  //用户被锁定后会无法连接到数据库
+	解锁操作：alter user dog account unlock;
+
+	此时新用户却不能通过“用户名.表名”访问其他普通用户的表，需要将四个主要的权限：insert、delete、update、select给予新用户
+	grant select,insert on scott.emp to dog; //授权select,insert
+
+	权限的回收：
+	revoke select,insert on scott.emp from dog;
+	revoke connect,resource,create table,create session from dog;
+
+	删除用户：drop user dog cascade;
+
+
+24，数据库的备份（理解）
+	数据的导出： 1,DOS命令：md backup 创建backup表
+		     2,DOS命令：输入exp
+		     3，输入用户名和密码 scott/tiger
+
+	数据的导入：1，进入导出文件所在的文件夹之中
+		    2，输入imp命令
+		    3，输入用户名 scott/tiger
+	上面的导入、导出只适合数据量小的数据。
+
+	数据表的冷备份：在数据操作之中，有可能有些用户不会进行事务的提交，那么在这种情况下很可能无法进行完整的备份操作，
+			而所谓的冷备份指的就是在关闭数据库实例的情况下进行数据库备份操作的实现。
+
+25，数据库设计范式（理解）（参见MySQL笔记）
+	唯一的设计宝典：设计的时候尽量避免日后的程序出现多表关联。
+
+
+26,导入数据命令：
+	例如：会从下面地址中导入如下的文件。
+	@E:/Java视频资料/项目/day01/医药采购/oracle_sql/yycg_table.sql
+	@E:/Java视频资料/项目/day01/医药采购/oracle_sql/yycg_data.sql
+
+	@E:\前端文件\HTMLFilePlace\Oracle\数据库创建脚本.sql  “\”这样也可以

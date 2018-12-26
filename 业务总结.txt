@@ -1,0 +1,1 @@
+1，Promotion表，当promotionType为PromotionEnum.SPECIAL_OFFER(特价活动)时，goodsId一定不为空。

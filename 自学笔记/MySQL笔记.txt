@@ -1,0 +1,659 @@
+0，数据处理函数(单行处理函数)常用方法：
+	Lower,upper,substr,length,trim(去掉前后空格),str_to_date,date_format,format(设置千分位),roud,rand(),Ifnull.
+
+1,多行处理函数(聚合函数，分组函数)不能直接用在where后面，遇到null直接忽略掉。
+	常用方法：
+		sum,avg,max,min,count
+
+2，count(*)：*表示的是tables中的每一行
+
+3，distinct的用法：
+	select distinct emp_no,title from titles; 与emp_no，title中有一个不同时就是不重复的，要两个相同才是重复。
+
+4，group by 用法：
+	select job,max(sal) from emp group by job; select后面只能有分组字段(group by后面的字段)和分组函数
+
+	select job,ename,max(sal) from emp group by job;注意：显示的ename是每一组里面的第一行里的ename，并不对得上，没有任何意义。
+
+	多个字段分组：计算不同部门的不同岗位的最高薪水(第一个字段重了，用第二个字段分组。可以和distinct的多字段查重进行比较)
+	select 
+		deptno,job,max(sal) as maxsal
+	from
+		emp
+	group by
+		deptno,job;
+
+
+5，having的用法：having必须与group by一起使用
+	select 
+		deptno,job,avg(sal) as avgsal
+	from
+		emp
+	group by
+		deptno,job;
+	having 
+		avgsal>3000;
+
+	having与where数据过滤的区别：where用在group by之前，而having用在之后。
+
+6，case...when...then...else...end的用法:
+	select emp_no,salary,
+		(case emp_no
+			when '11802' then salary*1.1
+			when '11803' then salary*1.5
+			else salary
+			end) as newsalary from salaries;
+
+
+7，asc(升序)，desc(降序)，mysql默认使用asc。asc,desc用在后面,如：order by xxx desc;
+
+8，跨表查询
+	年代分类：
+		SQL92
+			select ename,dname from emp as e,dept as d where e.deptno=d.deptno;
+
+		SQL99
+			select
+				e.ename,d.dname
+			from
+				emp e (给表起别名as一般省略，给字段起别名字段一般不省略)
+			
+			join	dept d
+
+			on(表的链接条件)	
+				e.deptno=d.deptno
+			where
+				数据过滤条件;
+	连接方式：
+		内连接:A表和B表能够完全匹配的记录查询出来。一般省略了inner关键字。
+			等值链接
+				查询出员工所对应的部门名称
+				select
+					e.ename,d.dname
+				from
+					emp e (给表起别名as一般省略，给字段起别名字段一般不省略)
+				
+				inner join	
+					dept d
+
+				on(表的链接条件)	
+					e.deptno=d.deptno
+			非等值链接
+				查询出员工所对应的薪水等级
+				select 
+					e.ename,e.sal,s.grade
+				from
+					emp e
+				inner join 
+					salgrade s
+				on 
+					e.sal between s.losal and s.hisal;
+			自连接(在同一张表中)
+				查询出员工所对应的领导名称：显示员工名称和领导名称
+				select
+					a.ename,b.ename as leadername
+				from
+					emp a
+				join
+					emp b
+				on
+					a.mgr = b.empno;
+
+		
+		外链接：A表和B表能够完全匹配的记录查询出来之外，将其中一张表的记录无条件的完全查询出来，
+			对方没有匹配的记录时，会自动模拟出null值与之匹配。
+			
+			外链接的查询结果条数>=内链接的查询结果条数
+			
+			左外链接/左链接(包含左边表的全部行，不管右边的表中是否存在与它们匹配的行)
+
+			右外链接/右链接
+				select
+					e.ename,d.dname
+				from
+					emp e
+				right outer join
+					dept d
+				on
+					e.deptno = d.deptno;
+
+			
+			右外链接换成左外链接：
+				select
+					e.ename,d.dname
+				from
+					emp d
+				left outer join
+					dept e
+				on
+					e.deptno = d.deptno;
+
+		
+		区分内外链接的关键字：left或者right，而不是inner或者outer(因为可以省略)
+
+
+		全链接：
+			查询员工的部门名称，员工的领导编号和薪水等级
+			select 
+				d.dname,
+				e.ename,
+				b.ename as leadername,
+				s.grade
+			from
+				emp e
+			join
+				dept d
+			on
+				e.deptno=d.deptno;
+			
+			join
+				emp b
+			on
+				e.mgr=b.empno
+			
+			join
+				salgrade s
+			on	e.sal between s.losal and s.hisal;
+
+9，子查询：
+	1，找出薪水比公司平均薪水高的员工，要求显示员工名和薪水
+	select * from emp where sal > avg(sal); 错误语法：分组函数(avg)不能直接用在where后面
+	select ename,sal from emp where sal >(select avg(sal) as avgsal from emp); 在where后面间接使用分组函数。
+
+	2，找出每个部门的平均薪水，并且要求显示平均薪水的等级。
+	   第一步：先求出每个部门的平均薪水
+	   select
+		 e.deptno,avg(sal) as avgsal
+	   from
+		 emp e
+	   
+	   group by
+		 e.deptno;
+	  
+	  
+	   第二步：将上面的结果看成t表(临时表)
+
+	   select 
+		t.avgsal,s.grade
+	   from 
+			(select
+				e.deptno,avg(sal) as avgsal
+			 from
+				emp e
+		   
+			group by
+				e.deptno) t
+	   join
+		salgrade s
+	   
+	   on
+		t.avgsal between s.losal and hisal;
+
+	   
+10，UNION
+	查询出工作岗位为manager和salesman的员工
+	select ename,job from emp where job = 'manager' or job = 'salesman';
+	select ename,job from emp where job in('manager','salesman');
+
+	UNION合并相加结果集
+	select ename,job from emp where job = 'manager'
+	UNION
+	select ename,job from emp where job = 'salesman';
+
+	
+	select ename,job from emp where job = 'manager'
+	UNION
+	select empno,job from emp where job = 'salesman'; 没有意义
+
+	使用UNION关键字合并查询结果集时所查询的字段个数、含义要一样。
+
+11，limit的用法：只在MySQL中起作用
+	截取前5个员工的信息(下标是从0开始的)
+	select * from emp limit 0,5;
+
+	select * from emp limit 5; MySQL数据库默认从0开始
+
+	
+	limit用于分页：
+	页码：pageNo	pageSize
+	第一页：1,2,3 limit 0,3
+	第二页：4,5,6 limit 3,3
+	第三页：7,8,9 limit 6,3
+	第pageNo页：  limit (pageNo-1)*pageSize pageSize
+
+12，创建表
+	create table t_表名/tbl_表名(
+		字段名称  字段类型  字段长度  字段约束,
+		字段名称  字段类型  字段长度  字段约束,
+		字段名称  字段类型  字段长度  字段约束,
+		字段名称  字段类型  字段长度  字段约束
+	);
+	create table t_student(
+		no int(4),
+		name varchar(32),
+		gender char(1),
+		birth date,
+		email varchar(128)
+	);
+
+	查看建表语句：
+		show create table t_student;
+	
+	删除表：
+		drop table t_student;
+
+		drop table if exists t_student; 如果表存在才会去删除。
+
+
+13，快速复制一张表(做备份)：
+	create table emp_bak as select * from emp;
+
+
+14，DML语句：insert update delete
+	1,insert语法：insert into 表名(字段名，字段名，字段名，字段名) values(字段值，字段值，字段值，字段值);
+	
+	insert into t_student(no,name,gender,birth,email) values(1,'zhangsan','1',str_to_date('1980-10-01','%Y-%m-%d'),'zhangsan163@.com');
+	insert into t_student(no,name,gender,birth,email) values(2,'lisi','2','1982-12-01','lisi163@.com'); (MySQL默认日期为年-月-日，故不用转换类型)
+	insert into t_student(no,name,gender,birth,email) values(3,'hanmeimei','2',str_to_date('09-08-1985','%m-%d-%Y'),'hanmeimei163@.com');
+	insert into t_student(no,name,gender) values(4,'lilei','2');
+	+------+-----------+--------+------------+-------------------+
+	| no   | name      | gender | birth      | email             |
+	+------+-----------+--------+------------+-------------------+
+	|    1 | zhangsan  | 1      | 1980-10-01 | zhangsan163@.com  |
+	|    2 | lisi      | 2      | 1982-12-01 | lisi163@.com      |
+	|    3 | hanmeimei | 2      | 1985-09-08 | hanmeimei163@.com |
+	|    4 | lilei	   | 2      | NULL       | NULL              |
+	+------+-----------+--------+------------+-------------------+
+
+	省略插入：(不推荐使用，程序可读性差，易出错，默认给每一个字段赋值，少一个就会报错。)
+	insert into t_student values(5,'jerry','1',str_to_date('1987-07-01','%Y-%m-%d'),'jerry163@.com');
+
+	2,update语法：update 表名 set 字段名称 = 字段值，字段名称 = 字段值 where 限制条件(所修改的数据,如果没写where会默认修改的是整张表的字段的值);
+
+	update t_student set birth = str_to_date('1988-01-01','%Y-%m-%d'),email = 'lilei163@.com' where no = 4;
+
+	3,delete语法：delete from 表名 //删除表中所有的数据(物理上的删除)
+	
+	delete from t_student where no = 4;
+
+	4,设置表中字段默认值：
+		drop table if exists t_student;
+		create table t_student(
+			no int(4),
+			name varchar(32),
+			gender char(1) default '1',
+			birth date,
+			email varchar(128)
+		);
+		insert into t_student(no,name) values(1,'zhangsan');
+		insert into t_student(no,name) values(1,'李四');
+		
+	解决乱码问题：
+		 show variables like '%char%';
+		 set character_set_results = gbk;
+	
+				
+15，快速向表中插入数据：
+	create table departments_bak as select * from departments;
+	insert into departments_bak select * from departments where dept_name = 'Finance';
+	
+	insert into departments_bak select dept_name from departments where dept_name = 'Finance'; //插入错误，插入的字段个数，类型必须保持一致
+
+
+16，修改表的结构：
+	
+	//添加字段
+	alter table t_student add emil varchar(128);
+
+	//修改字段长度
+	语法：alter table 表名 modify 字段名称 字段类型 字段长度 字段约束
+	alter table t_student modify no int(8);
+
+	//删除字段
+	alter table t_studebt drop email;
+
+	//修改字段名
+	alter table t_student change name username varchar(32);
+
+17，constraint(约束)：
+	1，not null
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		email varchar(128)
+	);
+	insert into t_user(id,email) values(1,'lilei163@.com'); name 为not null后必须赋值
+
+	2,unique(唯一性约束)
+	(1)列级约束：email varchar(128) unique(保证邮箱的唯一性)
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		email varchar(128) unique
+	);
+	insert into t_user(id,name,email) values(1,'zhangsan','zhangsan@163.com');
+	insert into t_user(id,name,email) values(2,'lisi','zhangsan@163.com'); (重复输入了邮箱，邮箱是唯一性的)
+
+	3，表级约束(可以多个字段同时约束)
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		email varchar(128),
+		unique(email)
+	); 
+	insert into t_user(id,name,email) values(1,'zhangsan','zhangsan@163.com');
+	insert into t_user(id,name,email) values(2,'lisi','zhangsan@163.com');(报的错与上面一样)
+
+	//多个字段约束
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		email varchar(128),
+		unique(name,email)
+	);
+	insert into t_user(id,name,email) values(1,'zhangsan','zhangsan@163.com');
+	insert into t_user(id,name,email) values(2,'lisi','zhangsan@163.com'); (这时就可以插入了，要name与email同时一样才是重复的)
+	insert into t_user(id,name,email) values(2,'lisi','zhangsan@163.com'); (再次插入就是重复的了)
+
+	//给多字段约束起别名
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		email varchar(128),
+		constraint t_user_name_email_unique unique(name,email)
+	);
+	查询约束别名步骤:
+	1，use information_schema;
+	2，desc table_constraints;
+	3，select  CONSTRAINT_NAME from table_constraints;
+	4，select  CONSTRAINT_NAME from table_constraints where table_name = 't_user';
+	+--------------------------+
+	| CONSTRAINT_NAME          |
+	+--------------------------+
+	| t_user_name_email_unique |
+	+--------------------------+
+
+	
+	//非空约束与唯一性约束的联合应用(既不能为空也不能重复，例如身份证号码)
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null unique
+	);
+	insert into t_user(id,name) values(1,'lisi');
+	insert into t_user(id,name) values(2,'lisi');
+	insert into t_user(id) values(3);
+
+	4,主键约束PK(primary key，往往不能被修改)：主键按个数来分：单一主键，复合主键。主键按性质来分：自然主键、业务主键。   注意：一张表中只能有一个主键。
+	给表中某个字段添加主键约束之后，该字段被称为主键字段，主键字段中出现的每一个数据都被称为主键值。
+	主键字段的作用：
+		添加主键primary key的字段即不能重复也不能为空，效果与"not null unique"相同，
+		但本质是不同的，添加主键约束之后，主键不仅会有"not null unique"作用，而且
+		主键字段还会自动添加“索引”——index;
+
+	//列级主键
+	drop table if exists t_user;
+	create table t_user(
+		id int(4) primary key,
+		name varchar(32) not null
+	);
+
+	insert into t_user(id,name) values(1,'lisi');
+	insert into t_user(id,name) values(2,'lisi');
+	insert into t_user(id,name) values(2,'lisi');(id重复)
+	insert into t_user(name) values('lisi'); (id不能为空)
+
+	//表级主键
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		primary key(id)
+	);
+
+	//联合
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		primary key(id,name)
+	);
+	insert into t_user(id,name) values(1,'lisi');
+	insert into t_user(id,name) values(2,'lisi');
+	insert into t_user(id,name) values(2,'lisisi'); (没有重复)
+	insert into t_user(id,name) values(2,'lisi');   (重复，要两个相同时才重复)
+
+	//给主键起别名
+	drop table if exists t_user;
+	create table t_user(
+		id int(4),
+		name varchar(32) not null,
+		constraint t_user_id_name_pk primary key(id,name)
+	);
+
+	
+	5，auto_increment(只能用来修饰主键)
+	drop table if exists t_user;
+	create table t_user(
+		id int(4) primary key auto_increment,
+		name varchar(32) not null
+	);
+	insert into t_user(name) values('zhangsan'); (id自动为1)
+	insert into t_user(name) values('lisi');     (id自动为2)
+	insert into t_user(name) values('lisi');     (id自动为3)
+	delete from t_user where id = 2;
+	insert into t_user(name) values('lisi');      (删掉id为2后,再增加id为4。id一旦没了就不会再重复使用,出非把表删除后，重新建立另一张表。)
+
+
+18，foreign key(外键约束)：简称FK	注意：与主键不同，外键在一张表中可以有多个。
+	外键根据个数分为：单一外键、复合外键
+
+	需求：设计一张表用来存储学生和班级信息
+	t_student包含:sno,sname,classno,cname
+	drop table if exists t_student;
+	create table t_student(
+		id int(4) primary key auto_increment,
+		sno int(4),
+		sname varchar(32),
+		classno int(4),
+		cname varchar(32)
+	);
+	上面表的班级名称cname是相同的，会造成数据冗余。
+	可以创建两张表t_student、t_class通过classno建立连接关系
+
+	drop table if exists t_student;
+	create table t_student(
+		sno int(4) primary key auto_increment,
+		sname varchar(32),
+		classno int(4)
+	);
+	
+	drop table if exists t_calss;
+	create table t_class(
+		cno int(4) primary key,
+		cname varchar(32)
+	);
+
+	insert into t_class(cno,cname) values(100,'高三1班');
+	insert into t_class(cno,cname) values(200,'高三2班');
+	insert into t_class(cno,cname) values(300,'高三3班');
+
+	insert into t_student(sname,classno) values('张三',100);
+	insert into t_student(sname,classno) values('李四',100);
+
+	//加入超出班级编号时，会找不到‘王五’所对应的班级
+	insert into t_student(sname,classno) values('王五',400);
+
+	结论(classno值必须来自cno)：为了保证t_student表中的classno字段中的
+	数据必须来自t_class表中的cno字段数据，有必要给t_student表中classno
+	字段添加外键约束;classno称为外键字段，classno中的100、200、300称为外键值，
+	classno在这里是单一外键。
+	
+	drop table if exists t_student;
+	create table t_student(
+		sno int(4) primary key auto_increment,
+		sname varchar(32),
+		classno int(4),
+		constraint t_student_classno_FK foreign key(classno) references t_class(cno)
+	);
+
+	insert into t_student(sname,classno) values('张三',100);
+	insert into t_student(sname,classno) values('李四',100);
+	
+	insert into t_student(sname,classno) values('王五',400); (不能添加了，有FK约束)
+
+	外键字段可以为null，外键为空的数据也叫做孤儿数据。
+
+	注意：被引用数据必须具有唯一性约束。
+
+
+19，级联更新与级联删除(在有外键约束的基础之上才能使用这个功能)
+	级联删除：on delete cascade
+	定义：在删除父表数据的时候，级联删除子表中数据;
+
+	//删除外键约束
+	alter table t_student drop foreign key t_student_classno_FK;
+
+	//添加约束(级联删除)
+	alter table t_student add constraint t_student_classno_fk foreign key(classno) references t_class(cno) on delete cascade;
+
+	//添加约束(级联更新)
+	alter table t_student add constraint t_student_classno_fk foreign key(classno) references t_class(cno) on update cascade;
+
+
+20，存储引擎：MySQL特有的，其他数据库没有。
+	查看存储引擎：show engines\G
+	默认存储引擎为：InnoDB
+	修改表的存储引擎：alter table 表名 engine = 存储引擎名称;
+	查看表使用的存储引擎：show create table 表名\G   show table status like '表名'\G
+
+	InnoDB存储引擎：支持事务处理、外键及引用的完整性，包括级联更新和删除。
+
+
+21，index(索引):
+	创建索引：a：create index 索引名 on 表名(列名)
+		  b：create unique index 索引名 on 表名(列名)
+
+	查看索引：show index from 表名;
+	删除索引：drop index 索引名 on 表名;
+
+
+22，view(视图)：
+	创建视图：create view 视图名称 as 查询语句;
+	create view myview as select * from salaries limit 10;
+	show tables;
+	查看所建视图: show create view myview;
+	删除视图：drop view myview;drop view if exists myview;
+
+	视图的作用：1，隐藏表的细节  create view myview as select empno as a,ename as b from emp;(myview里的a，b不知道含义来达到隐藏效果)
+		    2，提高检索效率(用于跨表查询时)  1，create view myview2 as select e.name,d.dname from emp e join dept d on e.deptno = d.deptno;
+						     2，select * from myview2;
+
+
+23，数据库设计三范式：
+	第一范式：主键、字段不能再分
+	定义：要求有主键，数据库中不能出现重复记录，每一个字段是原子性不能再分。主键通常采用数值型或定长字符串表示。
+
+	第二范式：非主键字段完全依赖主键 (解决多对多的关系)
+	定义：第二范式是建立在第一范式基础之上的，要求数据库中所有非主键字段完全依赖主键，不能产生部分依赖;(严格意义上说：尽量不要使用联合主键)
+	多对多的关系：例如：一个学生有多个老师，一个老师有多个学生，学生和老师通过第三张关系表建立关系。
+
+	第三范式：建立在第二范式基础之上，要求非主键字段不能产生传递依赖于主键字段;(一对多，在多的一方添加外键)
+
+
+24，一对一关系：
+	第一种方式：
+	create table t_husband(
+		hno int(4) primary key,
+		hname varchar(32),
+		wifeno int(4) unique,
+		foreign key(wifeno) references t_wife(wno)
+	);
+
+	hno	hname	    wifeno ->unique
+	-----------------------------------
+	100	zhangsan    1
+	200	lisi	   
+	
+	create table t_wife(
+		wno int(4) primary key,
+		wname varchar(32)
+	);
+	
+
+	wno	wname
+	---------------
+	1	lisi
+
+	
+	第二种方式：
+	上面两张表创建第三张关系表：
+	create table t_couple(
+		husbandno int(4) primary key,
+		foreign key(husbandno) references t_husband(hno),
+		wifeno int(4) unique,
+		foreign key(wifeno) references t_wife(wno)
+	);
+
+	husbandno	wifeno
+	------------------------
+	100		1
+
+
+
+25，Transaction(事务):transaction只和DML语句有关
+
+	Transaction具有的四个特性ACID
+	1,原子性(Atomicity)：事务是最小单元，不可再分
+	2，一致性(Consistency)：事务要求所有的DML语句操作的时候，必须保证同时成功或同时失败
+	3,隔离性(Isolation)：一个事务不会影响其他事务的运行
+	4,持久性(Durability)：在事务完成之后，该事务对数据库所作的更改将持久地保存在数据库中，并不会被回滚。 注意：只有在成功提交的情况下才有持久性
+
+	事务开启的标志：任何一条DML语句执行，标志事务的开启
+	事务结束的标志：a,提交(commit)：成功的结束，将所有的DML语句操作记录和底层硬盘文件中数据进行一次同步。
+			b,回滚(rollback)：失败的结束，将所有DML语句操作记录全部清空。
+
+
+	查看是否为自动commit：show variables like '%commit%';
+	
+	手动的开启事务:start transaction; 手动开启会关闭默认自动提交
+	提交:commit;
+
+	关闭手动提交：set autocommit = off;
+
+	
+	事务的隔离级别(以下级别由低到高，MySQL默认级别是repeatable read，Oracle的默认隔离级别是read committed)
+		1，read uncommitted(级别最低)	读未提交	事务A未提交的数据，事务B可以读取，该数据就叫做“脏数据”或“脏读 Dirty Read”。
+		2，read committed		读已提交	事务A提交数据，事务B才可以读取。会有“不可重复读”问题，“幻影”现象。
+		3，repeatable read		可重复读	事务A提交数据，事务B读不到。(只读其他事务插入数据之前的数据)，叫做“幻读”。	
+		4，serializable			串行化		在一个时间点只有一个事务在处理，其他事务排队等候。
+		
+		在java中以上级别分别是：1、2、4、8级。
+		查看会话级(只在当前窗口有效)隔离级别：select @@tx_isolation; 或者 select @@session.tx_isolation;
+
+		查看全局隔离级别：select @@global.tx_isolation;
+
+		设置隔离级别：set (global,session)transaction isolation level isolation-level; isolation-level可选上面四种隔离级别
+
+
+
+------------------------------补充内容--------------------------------------------
+1,for update：排它锁,也就是说,其他的事务是可以读取的。但是不能写入或者更新。
+	      当选中某一个行的时候,如果是通过主键id选中的。那么这个时候是行级锁。其他的行还是可以直接insert 或者update的。
+	      如果是通过其他的方式选中行,或者选中的条件不明确包含主键。这个时候会锁表。其他的事务对该表的任意一行记录都无法进行插入或者更新操作。只能读取。
+	      
+	      释放锁：rollback回滚即可。
+
+	      表级锁语法：lock table myemp in share mode nowait
+			  lock table 表名 in 锁定模式 mode [nowait]
+
+	      sys(超级管理员登录)下查看锁：select sid,SERIAL#, LOCKWAIT,status from v$session where sid in(select session_id from v$locked_object);
+	      kill一个session：alter system kill session '6,526'; 6是sid的值，526是SERIAL#的值
+	 
+
+

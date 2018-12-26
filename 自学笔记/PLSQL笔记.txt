@@ -1,0 +1,797 @@
+1,一个简单的PLSQL与SQL语句的联合使用
+declare
+    v_eno number;
+    v_ename varchar2(10);
+begin
+       v_eno := &empno;
+       select ename into v_ename from emp where empno=v_eno; --sql语句
+       dbms_output.put_line('编号：'|| v_eno || '的雇员名字是：'|| v_ename);
+end;
+
+注意： ename into v_enam 表示吧ename的值赋给v_enam。
+	字符串用"||"连接。
+	注释用"--",多行注释用"/**/"
+	":="为赋值
+
+2，在declare中赋值已经IF语法
+declare
+	v_total_sal NUMBER(9,2) := 0; --PL/SQL赋值语句
+	c_tax_rate CONSTANT NUMBER(3,2) :=8.25;  --常量只能被赋值一次
+	v_valid BOOLEAN NOT NULL := TRUE;
+	v_gender CHAR(1);
+	v_B BOOLEAN;
+	v_num1 NUMBER(2) := 10;
+	v_num2 NUMBER(2) := 10;
+begin
+	dbms.output.put_line('v_total_sal=' || v_total_sal);
+
+	--相当于Java中的"=="，执行逻辑比较
+	v_B := ( v_num1= v_num2);
+	IF(v_B=true) THEN
+		dbms.output.put_line('ok');
+	ELSE
+	    dbms.output.put_line('Not ok');
+	END IF;
+end;
+
+3,打开输出语法：set serveroutput on;
+
+
+4,在DOS窗口中，输入必须用 / 结束,在QL/SQL Developer中可以不使用。
+
+
+5,复合数据类型：
+	PL/SQL TABLES  表类型  索引从1开始，索引也放在一个空间中。
+	PL/SQL RECORDS 记录类型
+	复合类型被创建后，可以被使用多次定义多个变量。
+
+	声明表类型语法：TYPE NAMEED_TABLE_TYPE IS TABLE OF VARCHAR2(6) INDEX BY BINARY_INTEGER;
+	使用声明的表类型来声明变量：V_TABLE  NAMEED_TABLE_TYPE;
+	给表类型的变量赋值，可以通过索引来访问表类型的变量：
+	V_TABLE(1) := 'Hello1';
+	V_TABLE(2) := 'Hello2';
+	V_TABLE(3) := 'Hello3';
+	V_TABLE(4) := 'Hello4';
+	...
+	表类型的变量没有长度限制。
+
+declare
+	TYPE NAMEED_TABLE_TYPE IS TABLE OF VARCHAR2(6) INDEX BY BINARY_INTEGER;
+	V_TABLE  NAMEED_TABLE_TYPE;
+begin
+	V_TABLE(1) := 'Hello1';
+	V_TABLE(2) := 'Hello2';
+	V_TABLE(3) := 'Hello3';
+	V_TABLE(4) := 'Hello4';
+
+	DBMS_OUTPUT.put_line('V_TABLE(1)=' || V_TABLE(1) || 'V_TABLE(2)=' || V_TABLE(2) || 'V_TABLE(3)=' || V_TABLE(3) || 'V_TABLE(4)=' || V_TABLE(4));
+
+END;
+
+
+记录类型:
+DECLARE
+	--声明记录类型
+	TYPE NAMED_RECORE_TYPE IS RECORD(
+		EMPNO	NUMBER(4),
+		ENAME	VARCHAR2(20),
+		JOB	VARCHAR2(20),
+		MGR	NUMBER(4),
+		HIREDATE	DATE,
+		SAL	NUMBER(8,2),
+		COMM	NUMBER(8,2),
+		DEPTNO	NUMBER(4)
+	);
+	
+	--使用记录类型来声明变量
+	V_REC	NAMED_RECORE_TYPE;
+
+BEGIN
+	--给记录类型的变量赋值
+	V_REC.EMPNO := 7936;
+	V_REC.ENAME := '张三';
+	V_REC.JOB := '软件工程师';
+	V_REC.MGR := 7800;
+	V_REC.HIREDATE := to_date('1978-12-5','yyyy-mm-dd');
+	V_REC.SAL := 2000;
+	V_REC.COMM := 1000;
+	V_REC.DEPTNO := 10;
+	DBMS_OUTPUT.put_line('V_REC.EMPNO=' || V_REC.EMPNO || ',V_REC.ENAME=' || V_REC.ENAME || ',V_REC.HIREDATE=' || to_char(V_REC.HIREDATE,'yyyy-mm-dd'));
+
+END;
+注意：只有声明的字段才能访问。
+
+
+6,使用%TYPE来声明变量：%TYPE的前缀可以是一个前面声明过的简单类型的变量（可以是简单类型的变量，也可以是复合类型的变量），
+		       也可以是一个表的字段。
+DECLARE
+	V_EMPNO		NUMBER;
+	V_DEPTNO	V_EMONO%TYPE;
+BEGIN
+	V_EMPNO	:=8000;
+	V_DEPTNO := 20;
+	DBMS_OUTPUT.put_line('V_EMPNO=' || V_EMPNO || ',V_DEPTNO=' || V_DEPTNO);
+END;
+
+DECLARE
+	V_DEPTNO	EMP.HIREDATE%TYPE;  --EMP表的HIREDATE的类型作为V_DEPTNO的类型。
+BEGIN
+	V_DEPTNO := '12-5月-1987';
+	DBMS_OUTPUT.put_line('V_DEPTNO=' || V_DEPTNO);
+END;
+
+当修改表的某字段类型时，后面字段的类型也跟%TYPE前面字段的类型一样
+ALTER	TABLE EMP
+	ADD ADDR VARCHAR2(5);
+	V_DEPTNO	EMP.ADDR%TYPE;
+	
+
+7，%ROWTYPE:%ROWTYPE的前缀，可以是一个表名，也可以是前面声明的一个记录类型的变量(该变量必须参照与一个表，而不能是自定义的记录类型)
+DECLARE
+	--1，使用DEPT表的字段及其类型来声明了一种记录类型。2，用这种记录来声明变量。
+	V_EMP	DEPT%ROWTYPE;
+BEGIN
+	V_EMP.DEPTNO := 30;
+	V_EMP.DNAME := '开发部';
+	V_EMP.LOC := '北京';
+	DBMS_OUTPUT.put_line('V_EMP.DEPTNO=' || V_EMP.DEPTNO || ',V_EMP.DNAME=' || V_EMP.DNAME || ',V_EMP.LOC' || V_EMP.LOC);
+
+END;
+
+DECLARE
+	V_DEPT	DEPT%ROWTYPE
+	V_EMP	V_DEPT%ROWTYPE	--用V_DEPT的类型（记录类型），V_EMP也是记录类型。
+	
+BEGIN
+	V_EMP.DEPTNO := 30;
+	V_EMP.DNAME := '开发部';
+	V_EMP.LOC := '北京';
+	DBMS_OUTPUT.put_line('V_EMP.DEPTNO=' || V_EMP.DEPTNO || ',V_EMP.DNAME=' || V_EMP.DNAME || ',V_EMP.LOC' || V_EMP.LOC);
+
+END;
+
+DECLARE
+	--声明记录类型
+	TYPE NAMED_RECORE_TYPE IS RECORD(
+		EMPNO	NUMBER(4),
+		ENAME	VARCHAR2(20),
+		JOB	VARCHAR2(20),
+		MGR	NUMBER(4),
+		HIREDATE	DATE,
+		SAL	NUMBER(8,2),
+		COMM	NUMBER(8,2),
+		DEPTNO	NUMBER(4)
+	);
+	
+	V_DEPT	NAMED_RECORE_TYP;
+	V_EMP	V_DEPT%ROWTYPE;
+
+BEGIN
+	V_EMP.EMPNO := 20;
+	V_EMP.ENAME := '张三';
+	DBMS_OUTPUT.put_line('V_EMP.EMPNO' || V_EMP.EMPNO || ',V_EMP.ENAME' || V_EMP.ENAME);
+
+END;   //报错，该变量必须参照与一个表，而不能是自定义的记录类型
+
+
+8，日期类型和字符类型必须使用单引号：
+	例如：V_DEPTNO := '12-5月-1987';
+
+
+9,PL/SQL嵌套块的使用：只能出现在非声明行的SQL语句块的地方(在BEGIN和exception部分)，嵌套块本身被当做SQL语句执行。
+  外面的块称为父块，嵌套快称为子块。
+DECLARE
+
+BEGIN
+	 DECLARE
+	 
+	 BEGIN
+	 
+	 EXCEPTION
+
+	 END;
+
+exception
+	 DECLARE
+	 
+	 BEGIN
+
+	EXCEPTION
+
+	 END;
+ END;
+
+例子一：
+declare
+	v_weight number(3) := 100;
+begin
+	declare
+		v_weight number(3) := 200;
+	begin
+		v_weight := v_weight + 1;
+		dbms_output.put_line('在嵌套块中：v_weight=' || v_weight);  //201 就近原则
+	end;
+	v_weight := v_weight + 1;
+	dbms_output.put_line('在父块中：v_weight=' || v_weight);  //101 就近原则
+end;
+
+例子二：
+declare
+	v_weight number(3) := 100;
+begin
+	declare
+		--v_weight number(3) := 200;
+	begin
+		v_weight := v_weight + 1;
+		dbms_output.put_line('在嵌套块中：v_weight=' || v_weight);  //101 
+	end;
+	v_weight := v_weight + 1;
+	dbms_output.put_line('在父块中：v_weight=' || v_weight);  //102 
+end;
+
+例子三：
+declare
+	--v_weight number(3) := 100;
+begin
+	declare
+		v_weight number(3) := 200;
+	begin
+		v_weight := v_weight + 1;
+		dbms_output.put_line('在嵌套块中：v_weight=' || v_weight);  //101 
+	end;
+	v_weight := v_weight + 1;
+	dbms_output.put_line('在父块中：v_weight=' || v_weight);  //102 
+end;  //报错，局部变量与java类似
+
+
+10，在QL/SQL中使用函数和直接在Oracle中使用函数没有区别:
+declare
+  --在QL/SQL中使用函数和直接在Oracle中使用函数没有区别
+  V_DATE  DATE := TO_DATE('1987-12-8','YYYY-MM-DD');
+  V_NAME  VARCHAR2(10) := 'HelloWorld';
+begin
+  DBMS_OUTPUT.put_line('V_DATE=' || TO_CHAR(V_DATE,'YYYY-MM-DD') || ',字符长度：' || LENGTH(V_NAME));
+end;
+
+
+
+11，
+declare
+  v_1  varchar2(20);
+begin
+  --user会返回当前登录的用户名，sysdate是日期类型，Oracle会自动的把date类型转换成字符类型
+  v_1 := user || ':' || sysdate;
+  dbms_output.put_line(v_1);
+end;
+
+
+12，
+--在PLSQL中执行select语句
+--select语句只能返回一条记录(返回0条多条都会报错),并且要配合使用INTO
+declare
+  v_empno     emp.empno%type;
+  v_name      emp.ename%type;
+begin
+   --查询列表和变量必须要匹配
+  select empno,ename into v_empno,v_name from emp where empno = 7369; 
+  dbms_output.put_line('v_empno=' || v_empno || ', v_name=' ||  v_name);
+end;
+
+
+13 使用记录类型的变量和select * 搭配
+declare
+  v_emp  emp%rowtype;
+begin
+  select * into v_emp from emp where empno = 7369;
+  dbms_output.put_line(v_emp.empno||','||v_emp.ename||','||v_emp.job);
+end;
+
+
+14，--在PLSQL中使用组函数的时候，可以使用，但是要保证查询只能返回一条记录。
+declare
+      V_DEPTNO  NUMBER(4);
+      V_MAXSAL  NUMBER(8,2);
+      V_MINSAL  NUMBER(8,2);
+begin
+      select deptno,max(sal) maxsal,min(sal) minsal INTO V_DEPTNO,V_MAXSAL,V_MINSAL
+      from emp
+      group by deptno having max(sal)>3000; //注意：having保证有一条返回记录
+      DBMS_OUTPUT.PUT_LINE('V_DEPTNO=' || V_DEPTNO || ',V_MAXSAL=' || V_MAXSAL || ',V_MINSAL=' || V_MINSAL);
+end;
+
+15,
+declare
+
+begin
+      --在PLSQL中执行DML,事务控制语句和在Oracle中没有任何区别
+      insert into emp values(8000,'张1','销售员',7902,'12-8月-1986,2000,1000,10');
+      update emp set job='MANAGER',sal=2600 where empno=7369;
+      delete from dept where deptno=40;
+end;
+
+
+16,--在PLSQL中执行DDL,DCL要使用EXECUTE IMMEDIATE
+declare
+                             
+begin
+  execute immediate 'create table users (id number(4) primary key,name varchar2(20),sex char(2))';
+end;
+
+如果创建表的时候本身有单引号，那就用双引号代替。
+例如：execute immediate 'create table users (id number(4) primary key,name varchar2(20),sex char(2)) check (sex in("男","女"))';
+
+
+17，--PLSQL中使用if elsif  else
+declare
+      v_job      emp.job%type;
+      v_sal      emp.sal%type;
+      v_addsal   v_sal%type;                       
+begin
+      select job,sal into v_job,v_sal from emp where empno=7369;
+      IF (v_job='CLERK') THEN
+        v_addsal := v_sal * 1.2;
+      ELSIF (v_job='SALSMEN') THEN
+        v_addsal := v_sal * 1.5;
+       ELSIF (v_job='PRESIDENT') THEN
+        v_addsal := v_sal * 1.7;
+       ELSIF (v_job='MANAGER') THEN
+        v_addsal := v_sal * 1.8;
+       ELSE
+          v_addsal := v_sal * 2.0;
+       END IF;
+end;
+
+18，loop循环
+declare
+    v_count number(3) :=1 --初始条件                         
+begin
+    LOOP
+    dbms_output.put_line('v_count=' || v_count); --循环体
+    v_count := v_count + 1; --迭代条件
+    exit when v_count > 10; --循环条件
+    END LOOP;
+END;
+
+loop循环练习：
+--利用loop循环向users表中插入100条语句，如果编号是偶数则性别为女，如果编号是奇数，则性别为男。
+declare
+      v_sex   char(2);
+      v_count number(3) := 1;
+      v_name  varchar2(10);                       
+begin
+      loop
+        if (mod(v_count,2) = 0) then
+          v_sex := '女';
+         else
+          v_sex := '男';
+        end if;
+        v_name := '张' || v_count;
+        insert into users values(v_count,v_name,v_sex);
+        v_count := v_count + 1;
+        exit when v_count > 100;
+      end loop;
+end;
+
+19,--while循环
+declare
+  v_count  number(3) := 1;
+begin
+  while (v_count <= 10) loop --循环条件
+        dbms_output.put_line('v_count' || v_count); --循环体
+        v_count := v_count + 1; --迭代条件
+  end loop;
+end;
+
+while循环例子：
+--使用while循环向表users中插入100条数据
+declare
+  v_count number(3) := 1;
+  v_sex   char(2);
+  v_name  varchar2(10);
+begin
+  while (v_count <= 10) loop
+    if (mod(v_count,2) = 0) then
+      v_sex := '女';
+    else
+    v_sex := '男';
+    end if;
+    v_name := '张' || v_count;
+    insert into users values(v_count,v_name,v_sex);
+    v_count := v_count + 1;
+  end loop;
+  commit;
+end;
+
+
+20，for循环：
+declare
+  v_sex     char(2);
+  v_name    varchar2(20);
+begin
+  --Oracle会自动的声明计数器，会自动的进行计数器的迭代
+  for v_count in 1..100 loop  --从100开始到1
+    if (mod(v_count,2) = 0) then
+      v_sex := '女';
+    else
+    v_sex := '男';
+    end if;
+    v_name := '张' || v_count;
+    insert into users values(v_count,v_name,v_sex);
+  end loop;
+  commit;
+end;
+
+21，游标：
+---------游标------------------
+--在执行增删改查语句的时候，Oracle都会开辟一块内存空间，用来暂时存放受到SQL语句影响的数据。
+--这块内存空间就被称为游标区，我们可以借助于游标来分析这些受到影响的数据。
+--游标的分类：
+--1，隐式游标：crud都会有隐式游标，也就是说，我们可以通过隐式游标来分析受到crud语句影响的数据。
+--2，显示游标：专门用来从数据库中查询多条数据。
+
+游标属性包括四种：
+%rowcount	受到SQL影响的行数
+%found		Boolean值，是否还有数据
+%notfound	Boolean值，是否已无数据
+%isopen		游标是否打开。
+显示游标和隐式游标都有这四种属性，但是使用方法和含义却不相同。
+在使用游标的时候，需要使用游标名作为前缀。但是隐式游标没有名称，所有在使用隐式游标的时候统一采用SQL。
+例如：SQL%ROWCOUNT
+
+例子：隐式游标
+declare
+       v_count  number(3);
+begin
+       delete from emp where deptno = 10;
+       v_count := sql%rowcount;
+       dbms_output.put_line('被删除的数据的条数是：' || v_count);
+end;
+
+显示游标：
+---------显示游标------------------
+declare
+       --1,声明游标，一个显示游标，就是和一个有效的select语句绑死的。
+       cursor cur_emp is select * from emp;
+       v_rec_emp      emp%rowtype;
+begin
+       --2,打开游标，就是执行类游标绑定的SQL语句，并且把受到影响的数据放入游标区域中。
+       open cur_emp;
+       --取出游标中的一条数据装入记录类型的变量中。
+       fetch cur_emp into v_rec_emp;
+       --从记录类型中取出数据
+       DBMS_OUTPUT.put_line(v_rec_emp.empno || ',' || v_rec_emp.ename || ',' || v_rec_emp.job || ',' 
+       || v_rec_emp.mgr || ',' || v_rec_emp.hiredate || ',' || v_rec_emp.sal || ',' || nvl(v_rec_emp.comm,0)
+       || ',' || v_rec_emp.deptno);
+       --关闭游标
+       close cur_emp;
+          
+end;
+
+显示游标实例：使用loop循环
+declare
+       cursor cur_emp is select * from emp;
+       v_rec_emp      emp%rowtype;
+begin
+      open cur_emp;
+      fetch cur_emp into v_rec_emp;
+        --使用loop循环遍历游标
+       loop
+         DBMS_OUTPUT.put_line(v_rec_emp.empno || ',' || v_rec_emp.ename || ',' || v_rec_emp.job || ',' 
+         || v_rec_emp.mgr || ',' || to_char(v_rec_emp.hiredate,'yyyy-mm-dd') || ',' || v_rec_emp.sal || ',' || nvl(v_rec_emp.comm,0)
+         || ',' || v_rec_emp.deptno);
+         fetch cur_emp into v_rec_emp; --装入另一条数据
+         EXIT WHEN cur_emp%notfound; --当游标中没有数据的时候退出循环
+       end loop;
+       dbms_output.put_line('查询数据的总条数：' || cur_emp%rowcount);
+       close cur_emp;
+end;
+
+注意：游标在关闭之后或者开启之前都无法使用。
+
+使用while循环：
+declare
+       cursor cur_emp is select * from emp;
+       v_rec_emp      emp%rowtype;
+begin
+       open cur_emp;
+       fetch cur_emp into v_rec_emp;   --这里特别注意,fetch应放在这里，而不是放在while循环里。因为在没有执行fetch操作之前，游标中是没有数据的。
+       --使用while循环
+       while (cur_emp%found) loop
+         DBMS_OUTPUT.put_line(v_rec_emp.empno || ',' || v_rec_emp.ename || ',' || v_rec_emp.job || ',' 
+         || v_rec_emp.mgr || ',' || to_char(v_rec_emp.hiredate,'yyyy-mm-dd') || ',' || v_rec_emp.sal || ',' || nvl(v_rec_emp.comm,0)
+         || ',' || v_rec_emp.deptno);
+         fetch cur_emp into v_rec_emp; --装入另一条数据
+         end loop;
+         dbms_output.put_line('查询数据的总条数：' || cur_emp%rowcount);
+         close cur_emp;
+end;
+
+使用for循环：
+--使用for循环可以简化游标的开发，oracle会自动的声明记录类型的变量，会自动的open，fetch，close游标。
+declare
+         cursor cur_emp is select * from emp;
+begin
+         for v_rec_emp in cur_emp loop
+         DBMS_OUTPUT.put_line(v_rec_emp.empno || ',' || v_rec_emp.ename || ',' || v_rec_emp.job || ',' 
+         || v_rec_emp.mgr || ',' || to_char(v_rec_emp.hiredate,'yyyy-mm-dd') || ',' || v_rec_emp.sal || ',' || nvl(v_rec_emp.comm,0)
+         || ',' || v_rec_emp.deptno);
+         end loop;
+	 --dbms_output.put_line('查询数据的总条数：' || cur_emp%rowcount); 这里不能使用了，oracle已经自动的关闭了游标。
+end;
+
+22，使用PL/SQL调试;
+create or replace procedure cur_emp is 代替declare,其余不变
+--declare
+
+
+23，异常处理
+	异常语法：EXCEPTION
+			WHEN exception1 [OR exception2...] THEN
+			statement1;
+			statement2;
+			...
+			[WHEN exception3 [OR exception4...]THEN
+			statement1;
+			statement2
+			...]
+			[WHEN OTHERS THEN   --该语句保证不会漏掉异常，相当于java中把exception异常捕获，其他异常都能够捕获到。
+			statement1;
+			statement2;
+			...]
+
+	Oracel中异常的分类：
+	1，预定义异常：Orcale已经为这种异常定义好了名称，我们在异常处理部分直接通过异常名称进行捕捉。
+	预定义异常的一些异常名称：
+	NO_DATA_FOUND	没有找到数据
+	TOO_MANY_ROWS	数据太多
+	INVALID_CURSOR	失效的游标(游标没有打开之前或者游标关闭之后会发生该异常)
+	ZERO_DIVIDE	除数为0
+	DUP_VAL_ON_INDEX	唯一索引中插入重复值(违反主键约束)
+	VALUE_ERROR	赋值异常
+	
+	declare
+	  v_job  emp.job%type;
+	  cursor cur_update_comm is select * from emp for update;
+	  v_res number(8);
+	begin
+	  --select job into v_job from emp where deptno=10;
+	  --dbms_output.put_line('v_job=' || v_job);
+	  --dbms_output.put_line('查询数据的总条数是：' || cur_update_comm%rowcount);
+	  --v_res := 10/0;
+	  --insert into dept values(10,'销售部','北京');
+	  v_res := 'Hello';
+	exception
+	  when NO_DATA_FOUND then
+	    dbms_output.put_line('执行的select语句没有查询到结果');
+	  when too_many_rows then
+	    dbms_output.put_line('执行的select语句不能查询多条结果');
+	  when invalid_cursor then
+	    dbms_output.put_line('无效的游标');
+	  when zero_divide then
+	   dbms_output.put_line('除数不能为0');
+	  when dup_val_on_index then
+	    dbms_output.put_line('违反主键约束');
+	  when value_error then
+	    dbms_output.put_line('赋值错误');
+	  --可以捕获上面所有的异常 
+	   when others then
+	      dbms_output.put_line('PL/SQL中发生了其他异常');
+	end;
+
+	2,非预定义异常：也是因为违反了Oracle的规则，Oracle会产生报错信息（错误编号和错误信息），但是Oracle并没有为这类异常定义好名称。
+			我们自己定义异常名称，并将异常名称和错误编号绑定。
+
+	declare
+	v_emp_remaining exception;--自己定义一种异常名称
+	      pragma exception_init(v_emp_remaining,-02292);
+	begin
+	      delete from dept where deptno=10;
+	exception
+	      when v_emp_remaining then
+		dbms_output.put_line('违反外键约束');
+	      when others then
+	      dbms_output.put_line('PL/SQL中发生了其他异常');
+	end;
+
+	3，用户定义异常：操作的时候并没有违反Oracle的规则，而是违反了用户定义的规则，由于没有违反Oracle的规则，Oracle不会主动产生报错信息。
+			 需要我们手动的提升一个异常。
+
+	   创建一个表：(当电话为null时，raise一个异常)
+	drop table sm_emp purge;
+	create table sm_emp(
+	       no char(4),
+	       name char(4),
+	       salary number(6,2),
+	       phone char(8)
+	);
+	insert into sm_emp values('001','TOM','999.99','62543678');
+	insert into sm_emp values('002','TOM','999.99','62543678');
+	insert into sm_emp values('003','TOM','999.99',null);
+	select * from sm_emp;
+
+	declare
+        v_name varchar2(20);
+        e_phone_lost_exception  exception;--自己定义一种异常
+        cursor cur_sm_emp is select * from sm_emp;
+       
+	begin
+	       for v_rec_emp in cur_sm_emp loop
+		 if(v_rec_emp.phone is null) then
+		 v_name :=  v_rec_emp.name;
+		--当判断到违反了用户的规则，需要我们自己提升一个异常
+		 raise e_phone_lost_exception;
+		 end if;
+	       end loop;
+	exception
+	       when e_phone_lost_exception then
+		 dbms_output.put_line(v_name || '的电话为null');
+	       when others then
+		dbms_output.put_line('发生其他异常');
+	end;
+
+	上面三种异常的区别：预定义异常和非预定义异常都是因为违反了Oracle的规则，Oracle会自动的产生异常。
+	而用户定义异常并没有违反Oracle的规则，Oracle不会自动的产生异常。
+
+	-----------处理非预测的异常---------------
+	--用when others then捕获所有的非预测异常，取到错误编号和错误信息，记录到数据库中
+	drop table err_log purge;
+	create table err_log(  --建立一个日志记录表
+	    id number(5),
+	    code number(10),
+	    message varchar2(255),
+	    datetime date
+	);
+
+	declare
+	       v_code number(10);
+	       v_msg  varchar2(255);
+	begin
+	       delete from dept where deptno = 10;
+	exception
+	       when others then
+		 v_code := sqlcode;--捕获错误编号
+		 v_msg := sqlerrm;--捕获错误信息
+		 --把错误编号和错误信息插入到日志表中
+		 insert into err_log values(SEQ_ERRLOG.NEXTVAL,v_code,v_msg,sysdate);
+		 dbms_output.put_line('PLSQL程序中遇到异常，请查看日志记录获取详细信息');
+		 
+	end;
+
+24，Oracle会自动把字符型转换成数字类型
+	例如：v_res number(8);
+	      v_res := '1000';  --不会报错
+	      v_res := 'Hello'; --会报错
+
+
+
+
+25,PL/SQL程序单元
+	只有命名的PLSQL才会保存在数据库中，例如：create or replace procedure cur_emp is
+	匿名块：
+	[declare]
+	begin
+	[exception]
+	end;
+
+	过程procedure的调用：
+--当我们创建了一个过程之后，相当于在java中创建了一个方法
+--为了让过程得以执行，我们需要调用这个过程
+create or replace procedure cur_emp is
+--declare
+       cursor cur_emp is select * from emp;
+       v_rec_emp      emp%rowtype;
+begin
+       open cur_emp;
+       fetch cur_emp into v_rec_emp;
+       --使用while循环
+       while (cur_emp%found) loop
+         DBMS_OUTPUT.put_line(v_rec_emp.empno || ',' || v_rec_emp.ename || ',' || v_rec_emp.job || ','
+         || v_rec_emp.mgr || ',' || to_char(v_rec_emp.hiredate,'yyyy-mm-dd') || ',' || v_rec_emp.sal || ',' || nvl(v_rec_emp.comm,0)
+         || ',' || v_rec_emp.deptno);
+         fetch cur_emp into v_rec_emp; --装入另一条数据
+         end loop;
+         dbms_output.put_line('查询数据的总条数：' || cur_emp%rowcount);
+         close cur_emp;
+end;
+	--调用过程
+	--在命令行中调用
+	EXEC cur_emp;
+
+	--在匿名块中调用
+	begin
+	  cur_emp;
+	end;
+
+26，创建带有参数的过程
+	--创建带有参数的存储过程
+create or replace procedure add_deptno (p_deptno number,p_dname varchar2,p_loc varchar2) is
+--declare
+  
+begin
+  insert into dept values(p_deptno,p_dname,p_loc);
+  commit;
+end;
+--在匿名块中调用存储过程
+--调用有参数的过程的不同方式
+--1,按参数名称调用
+--2，按参数的位置进行调用
+--3,按混合方式调用
+declare
+  v_deptno number(4) := 50;
+  v_dname  varchar2(20) := '销售部';
+  v_loc    varchar2(10) := '北京';
+begin
+  --add_deptno(p_dname => v_dname,p_loc => v_loc,p_deptno => v_deptno); --按参数名称调用，不按顺序也可以。
+  --add_deptno(v_deptno,v_dname,v_loc); --按参数的位置调用，一定要按顺序.
+  add_deptno(v_deptno,p_loc => v_loc,p_dname => v_dname); --按混合方式调用。
+  
+end;
+
+
+
+27，--作为Oracle中过程的参数，除了有数据类型之外，还有一种特殊的类型，即输入输出类型(IN,OUT,IN OUT),没有指明类型，默认是IN。
+
+create or replace procedure PARAM_TEST(P_IN IN VARCHAR2,P_OUT OUT VARCHAR2,P_IN_OUT IN OUT VARCHAR2) is
+--declare
+       
+begin
+       dbms_output.put_line('在过程中,P_IN=' || P_IN); --IN类型只能带入
+       dbms_output.put_line('在过程中,P_OUT=' || P_OUT); --OUT类型只能带出
+       dbms_output.put_line('在过程中,P_IN_OUT=' || P_IN_OUT); --IN OUT即能带入又能带出
+       --作为out类型的参数，可以在过程中被重新赋值，并且会被返回给调用者。
+       P_OUT := 'OUT类型的参数在过程中被重新赋值';
+       P_IN_OUT := 'IN OUT类型的参数在过程中被重新赋值';
+end;
+-------------------------------
+declare
+       V_IN       VARCHAR2(100) := 'IN类型参数的初始值';
+       V_OUT      VARCHAR2(100) := 'OUT类型参数的初始值';
+       V_IN_OUT   VARCHAR2(100) := 'IN OUT类型参数的初始值';
+begin
+       PARAM_TEST(V_IN,V_OUT,V_IN_OUT);
+       dbms_output.put_line('在过程外，V_IN=' || V_IN);
+       dbms_output.put_line('在过程外，V_OUT=' || V_OUT);
+       dbms_output.put_line('在过程外，V_IN_OUT=' || V_IN_OUT);
+end;
+
+
+28，函数：可以接受一个或多个参数，在函数中完成运算，最终返回用户结果，Oracle中必须有返回结果
+ 创建一个函数：
+ create or replace function add_comms(p_job varchar2,p_sal emp.sal%type) return number is
+       v_comm     emp.comm%type;
+begin
+      IF (p_job='CLERK') THEN
+        v_comm := p_sal * 0.5;
+      ELSIF (p_job='SALSMEN') THEN
+        v_comm := p_sal * 0.6;
+       ELSIF (p_job='PRESIDENT') THEN
+        v_comm := p_sal * 0.7;
+       ELSIF (p_job='MANAGER') THEN
+        v_comm := p_sal * 0.8;
+       ELSE
+          v_comm := p_sal * 1.0;
+       END IF;
+       return v_comm; --在函数中一定要有一个有效的return语句。
+end;
+
+declare
+       v_res          number(8);
+       v_str          varchar2(20) := '我家都爱的奇偶阿斯顿';
+       v_length       number(3);
+begin
+  --给函数传参数
+  v_res := add_comms('SALSMEN',2000);
+  v_length := length(v_str);
+  dbms_output.put_line('v_res=' || v_res);
+  dbms_output.put_line('v_length=' || v_length);
+end;
+--在SQL语句中使用函数
+select ename,length(ename) 名字长度,job,sal,add_comms(job,sal) 佣金 from emp;  --上面创建好的函数，就可以在SQL语句中使用了(函数一般用在SQL语句中)
+
+注意：-无法在命令行中调用函数
+      --在匿名块中调用函数
+
+
+
+	
+

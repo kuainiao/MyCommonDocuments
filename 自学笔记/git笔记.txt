@@ -1,0 +1,98 @@
+1，快捷键：t键	搜索文件
+
+2，创建初始化仓库：
+	设置用户名：
+	git config --global user.name 'wuyongguo17'  --global（系统用户级别）
+	设置用户邮箱：
+	git config --global user.email '641720603@qq.com'
+
+	mkdir test	建立名为test的文件夹
+	pwd	查看当前的路径
+	
+	上面执行完设置用户名和设置用户邮箱，并且cd test（跳到test文件夹）后执行git init
+	git status命令用于显示工作目录和暂存区的状态。
+	
+	提交文件到仓库：
+	touch a1.java	创建a1.java文件
+	git add a1.java  将a1.java文件放到暂存区
+	git commit -m 'add a1.java'   将文件从暂存区提交到仓库	  'add a1.java'表示描述
+
+	修改仓库文件(按下面命令顺序执行)：
+	跟linux修改文件命令一样
+	cat a1.java	查看a1.java文件内容
+	git add a1.java  添加到暂存区
+	git status
+	git commit -m '第一次通过git修改文件并提交到仓库'
+	出现nothing to commit, working tree clean，表示成功
+
+	删除文件(按如下顺序执行)：
+	rm -rf a1.java
+	git rm a1.java
+	git commit -m '第一次通过git删除仓库文件'
+
+
+3,管理远程仓库（按如下顺序执行，要先提交到本地仓库，才能提交到远程仓库。）：
+	git clone https://github.com/wuyongguo17/timo.git
+	git add a1.java 
+	git commit -m '第一次通过git修改文件并提交到仓库'
+	git push 将本地仓库文件提交到远程仓库
+
+	设置权限，在本地仓库的隐藏文件下的config设置如下
+	[remote "origin"]
+	url = https://用户名:密码@github.com/用户名/仓库名.git
+
+
+4，github搭建个人网站：
+	仓库名必须为：用户名.github.io
+
+
+5，项目级别签名：name = wuyongguo
+	      email = 641720603@qq.com   保存在E:\Tools\git\repository\.git的config文件中
+
+
+  系统级别签名：name = wuyongguo_glb
+	      email = 641720603_glb@qq.com  保存在C:\Users\641720603\.gitconfig文件中
+ 
+
+  开发中一般设置系统级别签名即可。
+
+  
+ 6， 当把文件放入到暂存区后执行如下命令：
+  git rm --cache 文件名		将文件从暂存区撤离
+  git commit 文件名	会进入一个页面用于输入提交时的信息。
+  git log 查看版本日志，如果查看的内容放不下，按空格键翻下一页。
+  当查看日志内容过多时我们可以使用如下命令：
+  git log --pretty=oneline  一行显示 或者git log --oneline 或者 
+  git reflog显示如下：
+	f1a0d91 (HEAD -> master) HEAD@{0}: commit: 第五次提交
+	43e2150 HEAD@{1}: commit: 第四次提交   HEAD@{1} 表示回退一步移动到第四个版本
+	025783c HEAD@{2}: commit: 第三次提交
+	999d807 HEAD@{3}: commit: 第二次提交
+	d8f94c7 HEAD@{4}: commit (initial): 第一次提交
+ 版本回退/往前(通过索引)：
+ git reset --hard 025783c   025783c是索引
+
+ git remote add origin https://github.com/wuyongguo18/timo.git  给远程仓库地址起别名为 origin
+ git remote -v	查看别名
+ git push origin master   提交本地仓库的master到远程仓库
+
+
+ git branch -l :查看本地分支
+ git branch -r :查看远程分支
+ git branch -a :查看全部分支（远程的和本地的）
+
+
+
+7，git使用的常见问题：
+	1，Git fetch和git pull的区别, 解决Git报错:error: You have not concluded your merge (MERGE_HEAD exists).
+	 解决办法一:保留本地的更改,中止合并->重新合并->重新拉取
+	 $:git merge --abort
+	 $:git reset --merge
+	 $:git pull
+
+	解决办法二:舍弃本地代码,远端版本覆盖本地版本(慎重)
+	$:git fetch --all
+	$:git reset --hard origin/master
+	$:git fetch
+
+ 

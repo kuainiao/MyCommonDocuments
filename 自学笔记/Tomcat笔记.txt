@@ -1,0 +1,57 @@
+1,启动Tomcat之前需配JAVA_HOME环境变量，E:\JDK(JDK文件路径)，以及path变量，值为%JAVA_HOME%\bin
+
+2,在DOS命令窗口也可以启动Tomcat：把路径切换到Tomcat的bin目录下，启动：startup.bat  关闭：shutdown.bat
+
+3,欢迎页面：默认访问的页面，在web文件夹下建立名为WEB-INF的文件夹，在web.xml中的<welcome-file>里设置默认访问的资源。
+
+4，DOS窗口输入的打包命令：jar cvf d:\abc\myprimary.war .   注意：\abc\myprimary为文件路径名，最后的.表示的意思是把当前路径的全部文件打包
+	例如在DOS窗口输入如下命令：E:\Tool\Tomcat\apache-tomcat-9.0.4\webapps\myweb>jar cvf e:\Tool\myweb2.war .
+	分析：把E:\Tool\Tomcat\apache-tomcat-9.0.4\webapps\myweb下的所有文件打成war包，放到e:\Tool下，文件名为myweb2.
+
+	war包放在Tomcat的webapps文件夹下，当启动Tomcat时，会自动解压包。
+
+
+5，在eclipse中创建的web工程的文件发布在：E:\前端文件\Tomcat\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\myweb3下。
+
+6，如何在eclipse中打包，右键选择export。
+
+7，虚拟目录：也可以不把运行的文件放在webapps目录下，可以这样操作：在Tomcat的conf目录下的server.xml文件里的 <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">下添加标签<Context path="/xxx" docBase="E:/Tool/myweb"/> docBase的值表示运行文件所放的目录,/xxx表示的是在浏览器这样
+	    输入：http://localhost:8080/xxx/ 就能访问到。这种添加标签的方式需要重启服务器。
+
+	    另一种不需要重启服务器的方法：在E:\Tool\Tomcat\apache-tomcat-9.0.4\conf\Catalina\localhost下建立一个xml文件，例如ooo.xml,在该xml文件中，添加如下内容：
+	    <Context docBase="E:/Tool/myweb2"/>，此时服务器会自动发布，在浏览器窗口输入http://localhost:8080/ooo/就能访问到。这里的ooo.xml就相当于上面的所配的path="/xxx"
+
+
+8，如何查看一个网站的IP：在DOS窗口中输入，例如：ping www.baidu.com，结果为：Ping www.a.shifen.com [14.215.177.38]，[]内为ip地址。
+
+9，域名解析服务器DNS(Domain Name Service)：就是将域名与ip进行映射的服务，而提供这种服务的服务器称为DNS服务器。本机域名映射在C:\Windows\System32\drivers\etc\hosts文件中可以查看。
+
+
+10，创建虚拟主机：
+	在Tomcat的conf目录下的server.xml文件中，复制148行中的<Host>标签里的内容，粘贴在</Host>标签下(注意加结束标签"</Host>")，把属性name的值该成所希望创建的域名，例如：www.wuyongguo.com
+	属性appBase的值应该与上面的appBase的值应有所区分，例如修改名字为mywebapps(appBase的值表示的是所存放资源的路径，可以修改成其他，默认是Tomcat所在的路径下)。保存，启动服务器，此时在E:\Tool\Tomcat\apache-tomcat-9.0.4\conf\Catalina目录下
+	会自动创建有一个虚拟主机名的文件夹。此时在浏览器中输入http://www.wuyongguo.com:8080/myweb/是无法查找到资源的，需要在C:\Windows\System32\drivers\etc中的hosts文件中
+	添加："127.0.0.1       www.wuyongguo.com"，保存即可。此时在浏览器输入上面的内容就可以访问。当继续添加虚拟主机，修改Tomcat的conf目录下的server.xml文件里的内容需要重启服务器。
+
+	三面三个主机名字映射的ip都为127.0.0.1，当在浏览器输入http://127.0.0.1:8080/myweb/时访问的是哪个文件？
+	与Tomcat的conf目录下的server.xml文件里的 <Engine name="Catalina" defaultHost="localhost">，属性defaultHost的值有关。此时修改默认值即可。
+
+11，实现在浏览器中不加端口号也能访问：修改Tomcat的conf目录下的server.xml文件第69行中port的值为80： <Connector port="80" protocol="HTTP/1.1"，重启服务器，即可。
+					因为浏览器默认访问的端口号就是80，把port该为80后，就可以不用输入80了。
+
+
+
+
+12，实现http://www.wuyongguo.com/myweb/(myweb是项目名称)，不需要输入/myweb/可以直接访问：
+	把文件夹mywen（项目文件夹）名该为ROOT即可，记得把先前的ROOT文件夹改名后才能改。
+
+
+
+13，当webapps有很多个项目时，在浏览器修改项目名访问会很繁琐，如何解决？
+	在浏览器输入localhost(在ROOT文件夹默认是Tomcat)，进入页面，找到Manager App，点击取消。
+	在Tomcat文件夹中找到E:\Tool\Tomcat\apache-tomcat-9.0.4\conf 文件conf/tomcat-users.xml，复制点击取消后浏览器弹出内容的
+	<role rolename="manager-gui"/>
+	<user username="tomcat" password="s3cret" roles="manager-gui"/>到该xml文件下，修改username，和password的值，这里就都修改为1。重启服务器。
+	此时再次登录Manager App。账号为1，密码为1。此时就显示Tomcat下所有的应用。想访问谁，点击就ok。
+	

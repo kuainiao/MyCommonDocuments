@@ -1,0 +1,2 @@
+1，org.springframework.data.redis.serializer.SerializationException: Cannot deserialize; nested exception is org.springframework.core.serializer.support.SerializationFailedException: Failed to deserialize payload. Is the byte array a result of corresponding serialization for DefaultDeserializer?; nested exception is org.springframework.core.NestedIOException: Failed to deserialize object type; nested exception is java.lang.ClassNotFoundException: com.caichufang.ui.supplier.security.SecurityUserinfoAuthority
+   同时登陆了总后台，PC端公用Redis造成的，解决方法是只登陆一个就行。

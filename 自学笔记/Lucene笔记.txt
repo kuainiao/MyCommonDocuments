@@ -1,0 +1,85 @@
+1，使用IKAnalyzer分词器：
+	把分词器自带的xml、ext.dic、stopword.dic文件放在src下。
+	ext.dic ：用于扩展的新词
+	stopword.dic ： 不需要的词
+
+2，solr使用IK中文分析器的步骤：
+	1，把IK的jar包放入到E:\solr\apache-tomcat-7.0.85\webapps\solr\WEB-INF\lib下。
+	2，把IK的三个配置文件ext.dic、IKAnalyzer.cfg.xml、stopword.dic拷贝放入到：E:\solr\apache-tomcat-7.0.85\webapps\solr\WEB-INF\classes
+		注意：如果没有classes文件夹，要新建一个,classes文件夹相当于eclipse中的src。
+
+	3,在schema.xml文件中(位置：E:\solr\solrhome\collection1\conf\schema.xml)下添加如下代码：
+		<fieldType name="text_ik" class="solr.TextField"> //注意name的值不要与已经存在的相同。
+			<analyzer  class="org.wltea.analyzer.lucene.IKAnalyzer"/> 
+		</fieldType>
+		这样分析器就配置好了，然后就可以用自定义的域来使用该分析器，例如：
+		<field name="title_ik" type="text_ik" index="true" stored="true" />
+		<field name="content_ik" type="text_ik" index="true" stored="false" multiValued="true"/>
+
+
+	4,重启tomcat。
+
+
+3,使用solr界面进行增删改（选择到Documents界面）：
+	
+	增加：直接往里面添加就可以。
+	修改：只要把id值保持一样，把后面的值修改，就能把原先的覆盖掉。
+	删除：要选择xml格式，例如：
+	<delete>
+		<id>1</id> //删除掉id为1的
+	</delete>
+	<commit/>
+	或者
+	<delete>
+		<query>id:change.me</query>
+	</delete>
+	<commit/>
+
+	<delete>
+		<query>*:*</query>  //删除所有
+	</delete>
+	<commit/>
+
+4,solr的数据的导入：
+	1，导入jar：solr-dataimporthandler-4.10.3.jar、solr-dataimporthandler-extras-4.10.3.jar到E:\solr\solrhome\collection1\lib，
+	以及mysql-connector-java-5.1.7-bin。 没有lib文件夹要自建一个。
+	
+	2，创建dataimport处理器：
+	把如下代码复制到：E:\solr\solrhome\collection1\conf -> solrconfig.xml文件中：
+	 <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
+	     <lst name="defaults">
+	       <str name="config">data-config.xml</str>
+	     </lst>
+	</requestHandler>
+	在solrconfig.xml的同级目录下创建data-config.xml文件。
+
+	3，在data-config.xml添加如下代码：
+	<?xml version="1.0" encoding="UTF-8" ?>
+	<dataConfig>
+	<dataSource type="JdbcDataSource"
+		driver="com.mysql.jdbc.Driver"
+		url="jdbc:mysql://127.0.0.1:3306/test"
+		user="root"
+		password="252513"/>
+	<document>
+		<entity name="product" query="SELECT pid,name,catalog_name,price,description,picture FROM products">
+			<field column="pid" name="id" />
+			<field column="name" name="product_name" />
+			<field column="catalog_name" name="product_catalog_name" />
+			<field column="price" name="product_price" />
+			<field column="description" name="product_description" />
+			<field column="picture" name="product_picture" />
+		</entity>
+	</document>
+	</dataConfig>
+
+	4,在schema.xml文件中添加上面没有的域：
+	<field name="product_name" type="text_ik" indexed="true" stored="true" />
+	<field name="product_catalog_name" type="string" indexed="true" stored="true" />
+	<field name="product_price" type="float" indexed="true" stored="true" />
+	<field name="product_description" type="text_ik" indexed="true" stored="false" />
+	<field name="product_picture" type="string" indexed="false" stored="true" />
+
+	<field name="product_keywords" type="text_ik" indexed="true" stored="false" multiValued="true" />
+	<copyField source="product_name" dest="product_keywords"/>
+	<copyField source="product_description" dest="product_keywords"/>

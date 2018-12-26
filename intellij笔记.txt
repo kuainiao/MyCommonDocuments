@@ -1,0 +1,34 @@
+1，intellij快捷键：
+	sout + TAB		System.out.println();
+	ALT+INS：		生成get and set方法等。
+	Ctrl+Alt+L		格式化代码
+	Ctrl+Shift+Up/Down	向上/下移动语句
+	CTRL+N			搜索
+	ALT+回车键		查看未实现的方法、导包
+	Ctrl + G		定位到指定行号
+	Ctrl + o		当一个类实现另一个类时，打开其可以实现的方法
+	CTRL + H		查看类或接口的继承关系
+	CTRL + ALT+方向键	返回上一次光标的位置
+	CTRL + Q		光标移到该类上显示其详细信息
+	Ctrl+Alt+V		提取变量
+	CTRL + D		复制上一行
+	CTRL + Y		删除一行
+	CTRL + HOME		返回文件的开头
+	CTRL + END		返回文件的末尾
+	CRTL+SHIFT+上下方向键	向上或者向下移动代码
+	ALT + F7		查看该类被哪些类引用
+	ALT + 7			查看类所有声明过的方法
+	CTRL + F3		向下搜索相同的词
+	SHIFT + F3		向上搜索相同的词
+	ctrl + alt + t		try...catch等快捷键
+	Ctrl + Alt + M		将代码块抽取为方法
+	依次输入字母iter	foreach快捷键
+	
+
+
+2，IDEA调试模式：
+	F7		单步调试，进入函数内部
+	SHIFT+F7	选择要进入的函数
+	F8		单步调试，不进入函数内部
+	SHIFT+F8	跳出函数
+	F9		结束Debug

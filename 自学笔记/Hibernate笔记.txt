@@ -1,0 +1,517 @@
+1，hibernate版本5与3变化不大，与4变化大。
+
+2，映射文件：放在实体类的包下，名字为....hbm.xml(hbm前面的名字可以随便写)
+   主配置文件建立在src下，名字为hibernate.cfg.xml（文件名不能改）。约束详见：01-primary
+   映射文件：
+   <hibernate-mapping package="com.bjpowernode.beans">
+	<!--映射文件的作用：
+		1，类到表的映射
+		2，属性到字段的映射  -->
+	<class name="Student" table="t_student">
+		<id name="id" column="tid">
+			<generator class="native" />
+		</id>
+		<property name="name" column="tname" />
+		<property name="age" column="tage" />
+		<property name="score" column="tscore" />
+	</class>
+
+	<!--下面这种方式，数据库中的表是student-->
+	<class name="Student" >
+		<id name="id" >
+			<generator class="native"/>
+		</id>
+		<property name="name"/>
+		<property name="age"  />
+		<property name="score" />
+	</class>
+</hibernate-mapping>
+
+主配置文件：
+<session-factory>
+	<!--DB链接四要素  -->
+	<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+	<property name="hibernate.connection.url">jdbc:mysql://127.0.0.1:3366/test</property>
+	<property name="hibernate.connection.username">root</property>
+	<property name="hibernate.connection.password">252513</property>
+	<!--方言  -->
+	<property name="hibernate.dialect" >org.hibernate.dialect.MySQL5Dialect</property>
+	<!-- 数据源C3P0：数据库连接池 -->
+	<property name="hibernate.connection.provider_class">org.hibernate.c3p0.internal.C3P0ConnectionProvider</property>
+	<!-- 注册当前Session上下文：保证同一线程中获取到的Session是一个Session -->
+	<property name="hibernate.current_session_context_class">thread</property>
+	<!-- 自动建表,update如果没有表就建立，有 表就更新 。create每次都会建一个新表，所以不用create-->
+	<!-- <property name="hibernate.hbm2ddl.auto">create</property> -->
+	<property name="hibernate.hbm2ddl.auto">update</property>
+	<!-- 显示sql -->
+	<property name="hibernate.show_sql">true</property>
+	<!-- 格式化sql，不格式化，只显示在一行不便于看 -->
+	<property name="hibernate.format_sql">true</property>
+	<!--注册映射文件  -->
+	<mapping resource="com/bjpowernode/beans/Student.hbm.xml"/>
+</session-factory>
+
+注意：使用有参构造//1,加载主配置文件：xxx.cfg.xml  就能修改主配置文件的名字。
+      Configuration configure = new Configuration().configure("xxx.cfg.xml");
+
+
+3，SessionFactory对象是重量级的，一般不关闭，使用单例。Session对象是轻量级的，线程不安全的、多例的，使用完毕，立即关闭。
+
+4，ThreadLocalSessionContext类有一个Map,Map的key是当前线程Thread，value是通过openSession方法创建的session。
+
+5，查询：get()与load()的区别:
+   1,共同点：根据id查询
+   2,不同点：load如果加载的对象不存在会抛出异常，get如果加载的对象不存在则返回null。
+
+
+6，增删改操作的执行顺序：
+	增删改操作若放在同一事务下运行，则系统默认的执行顺序是：增改删。
+
+
+7，主配置文件的优先级高于hibernate.properties文件。
+
+
+8，hibernate主键生成策略。在Student.hbm.xml文件中<generator class="native" />
+	1,<generator class="increment" />，hibernate自动生成id(主键)\
+
+	2,<generator class="identity" />，数据库生成主键
+
+	3，<generator class="sequence" />，默认不支持，生成一个hibernate_sequence表，主键从中获取。
+
+	4，<generator class="native" />，由hibernate根据数据库支持能力从identity、sequence生成策略策略选择一种。oracle中使用sequence，在mysql中使用identity。
+
+	6，<generator class="assigned" />，主键由程序员手工设置，一般不使用人工设置主键
+
+	7，<generator class="uuid" />，该值使用IP地址、JVM的启动时间(精确到1/4秒)、当前系统时间和一个计数器值(在当前的JVM中唯一)经过计算产生，可以用于分布式hibernate应用中。
+	   使用这种生成策略，要求属性的类型必须为String类型。缺点：占内存、查询效率低。
+	   
+
+9，持久对象状态：用于存放对象的存储介质有三个：普通内存(与hibernate无关)、Session缓存、数据库。对象存储在不同的介质，就将处于不同的状态。
+	1，瞬时态：transient状态，对象在内存中存在，但DB中无记录，与Session无关，四个过度状态。
+	2，持久态：persistent状态，在内存中存在，DB中有记录，与Session相关，在Session中有对象的股本。
+	3，游离态：detached状态，在内存中存在，在DB中有记录，与Session无关。有一个evict()方法，删掉session缓存中的数据，一般不用。与delete的区别是：delete同时删除Session和DB中的数据。
+	4，无名态(不是官方文档给的状态)：在内存中不存在，但在DB中有记录，与Session无关。
+	hibernate通过id来管理对象，普通内存的对象和Session缓存中的对象实际上是同一个
+
+	//save()方法执行过程：
+	//1)向mysql发送一条消息，告诉mysql我要执行插入了，先为我生成一个id，传送给我
+	//2)接收到mysql发送来的id，并使用该id初始化student对象的id属性
+	//3)现在的student对象已经具有了id，那么Session缓存就可以管理它了：
+	// 将student的id作为key，student对象的引用作为value，放入到session缓存中
+	// 注意：Session缓存的本质，实际是一个Map，其key为被管理对象的id，value为被管理对象的引用。
+	// 一个对象被Session管理，就意味着，这个对象被放入到了Session缓存这个Map中。也就是说只有id属性不为null的对象才有可能被Session管理。
+	// 当对象由持久态转换为游离态时，实际就是将Map中的该对象删除了。
+	// 当对象由游离态转换为持久态时，实际就是将该对象放入到Session的这个Map中，再对其进行修改。
+
+
+10，单表查询与排序等(详见06-hql)：
+	1，sql查询
+		String sql = "select tid,tname,tage,tscore from t_student";
+		List<Student> list = session.createSQLQuery(sql).addEntity(Student.class).list(); //通过映射文件完成对象的封装
+	
+	2，hql查询
+		String hql = "from Student"; //这里的Student是类名
+		List<Student> list = session.createQuery(hql).list();
+	
+	3，Criteria查询
+		List<Student> list = session.createCriteria(Student.class).list();
+
+
+	4，排序：
+	Creteria排序：
+	List<Student> list = session.createCriteria(Student.class).addOrder(Order.desc("age")).list();
+
+	5，动态参数赋值：(详见06-hql)
+
+	7，分页：详见06-hql
+	String hql = "from Student";
+	int startIndex = 3;
+	int pageSize = 3;
+	List<Student> list = session.createQuery(hql).setFirstResult(startIndex).setMaxResults(pageSize).list();
+
+	8，模糊查询：详见06-hql
+	String hql = "from Student where name like :myname";
+	List<Student> list = session.createQuery(hql).setString("myname", "%张%").list();
+
+	9，通过id查询：
+	String hql = "from Student where id = :myid";
+	Student student= (Student) session.createQuery(hql).setInteger("myid", 2).uniqueResult();
+
+	10，count查询
+	//3，执行操作
+	String hql = "select count(*) from Student";
+	//String hql = "select count(id) from Student";  count(*) 与count(id)等价 即count(主键)
+	Long count = (Long) session.createQuery(hql).uniqueResult();
+
+	11，投影查询（查询出部分字段，其他字段显示为null或者0）：
+	String hql = "select new Student(name,age) from Student"; //这么写要只带两个参数的构造器。
+        List<Student> list = session.createQuery(hql).list();
+
+	
+	12，iterate查询：从Session缓存中读取(第一次查询先到缓存查，缓存没有再到数据库查，效率很低，第二次查询效率就较高)
+	//第一次查询
+	Iterator<Student> it = session.createQuery(hql).iterate(); //iterate查询比下面的查询效率低。先查出满足条件的主键，然后分别根据查询到的主键再详细查询。
+	while (it.hasNext()) {
+		Student student = (Student) it.next();
+		System.out.println(student);
+	}
+	System.out.println("------------------");
+	//第二次查询
+	List<Student> list2 = session.createQuery(hql).list();
+	for (Student student : list2) {
+		System.out.println(student);
+	}
+
+	但是当第二次还是使用iterate查询时，会从缓存中查询：
+	//第一次查询
+	Iterator<Student> it = session.createQuery(hql).iterate();
+	while (it.hasNext()) {
+		Student student = (Student) it.next();
+		System.out.println(student);
+	}
+	System.out.println("------------------");
+	//第二次查询
+	Iterator<Student> it1 = session.createQuery(hql).iterate();
+	while (it1.hasNext()) {
+		Student student = (Student) it1.next();
+		System.out.println(student);
+	}
+
+	所以为了避免N+1查询的问题，我们第一次用List查询，第二次再用iterate查询(本质就是iterate会先从Session缓存中查，然后再从数据库中查，
+		而其从数据库中查询会很慢。所以我们要避免使用iterate从数据库中查询数据。)
+	String hql = "from Student where id < 4";
+	List<Student> list = session.createQuery(hql).list();
+	for (Student student : list) {
+		System.out.println(student);
+	}
+	System.out.println("------------------");
+	//第二次查询
+	Iterator<Student> it1 = session.createQuery(hql).iterate();
+	while (it1.hasNext()) {
+		Student student = (Student) it1.next();
+		System.out.println(student);
+	}
+
+	13，命名查询（了解）：如果有多个映射文件，写到哪个文件都可以（底层会把多个映射文件并成为一个映射文件），该查询不是对应着类的（并不是查询哪个类就放到哪个映射文件）
+		映射文件这样设置：
+		<query name="selectById">from Student where id = :myid</query>
+		
+		//代码如下
+		Student student= (Student) session.getNamedQuery("selectById").setInteger("myid", 2).uniqueResult();
+
+
+	14，关联查询（重点）详见：07-one2many-s：
+	      单向关联（一对多）：session.save(一方对象)，底层使用update语句(底层先插入多方对象(对方)，在插入一方对象)。使用update的原因，先插入多方，此时没有外键，当插完一方时，才有外键。
+	      session.save(多方对象)，底层使用insert语句(底层先插入一方对象(对方)，在插入多方对象)。
+
+	      java代码里谁在维护关联关系，session.save()，括号里就save谁。
+
+
+	
+		<set name="ministers" cascade="save-update">
+			<key column="countryId" />
+			<one-to-many class="Minister"/>
+		</set>
+
+
+		双向关联：详见08-one2many-d
+		<!--如果缺少 column="countryId"，会默认把关联属性country当做外键 -->
+		<many-to-one name="country" class="Country" cascade="save-update" column="countryId"/>
+
+	15，自关联：详见09-one2many-d-oneself
+
+
+	16,inverse:
+	<!-- 设置inverse=true，表示一方放弃维护权，只有一方有这个权利，此时多方的countryId的值将变为null -->
+	<set name="ministers" cascade="save-update" inverse="true">
+		<key column="countryId" />
+		<one-to-many class="Minister"/>
+	</set>
+
+	17，多对多：详见12-many2many-s（单向）
+	<set name="courses" cascade="save-update" table="middle">
+		<key column="studentId"/>
+		<many-to-many class="Course" column="courseId"/>
+	</set>
+
+	双向多对多：详见13-many2many-d
+
+	18，级联删除：详见14-cascade-delete  cascade设置为：cascade="all"
+	set name="students" cascade="all" table="middle">
+		<key column="courseId"/>
+		<many-to-many class="Student" column="studentId"/>
+	</set>
+	级联操作是通过映射文件的cascade属性设置的：
+	none：在保存、更新或删除当前对象时，忽略其他关联的对象，即不使用级联。是默认值
+	save-update：当通过Session的save()、update()、saveOruUdate()方法来保存或更新当前对象时，将级联到其他DB中的相关联的表。
+	delete：当通过Session的delete()方法删除当前对象时，将级联删除所有关联的对象。
+	all：包含save-update、delete级联的所有行为。另外，当对当前对象执行lock()操作时，也会对所有关联的持久化对象执行lock()操作。
+	delete-orphan：删除所有和当前对象解除关联关系的对象。
+	all-delete-orphan：包含all和delete-orphan级联的所有行为。
+
+
+11，多表查询(了解)：
+	1，迫切左外链接：详见16-leftOutJoinFetch
+	String hql = "select distinct c from Country c left outer join fetch c.ministers";
+
+	
+
+12，hibernate检索优化（重点）：
+	直接通过get()、load()等查询语句加载的对象，称为主加载对象，而主加载对象所关联的对象，称为关联加载对象，或从加载对象。
+	直接加载：对于不使用优化进行对象检索的过程。否则称为延迟加载，或懒加载。
+	延迟加载在Hibernate3.3版本之前使用CGLB代理，所以实体类不能使用final修饰(final修饰不能有子类，而CGLB使用的是子类扩展)
+
+	get()方法：直接加载。   load()方法：延迟加载
+	load()方法没有查询到抛异常的原因：拿查询的结果null去初始化代理对象时就会报错。
+	load()方法默认延迟加载，也可以设置为直接加载：
+	<class name="Student" table="t_student" lazy="false">
+
+	关联对象的检索优化：主加载对象采用直接加载，其关联对象采用延迟加载还是直接加载的问题。
+	多端加载优化：一方为主加载对象，多方为从加载对象。
+	单端加载优化：多方为主加载对象，一方为从加载对象。
+
+	一：多端加载优化：详见18-multiple-ended-load
+	lazy的取值：false、true、extra(特别延迟加载。执行聚合函数可以解决的，不进行详情查询)。
+	fetch的取值：join(采用迫切左外连接查询，查询的是一张表)、select(采用普通select查询)、subselect(采用子查询)。
+	
+	1，<set name="ministers" cascade="save-update" fetch="join">   fetch="join"时，lazy失效。
+	2，<set name="ministers" cascade="save-update" fetch="select" lazy="false">  两个表一起查询，没有延迟加载
+	3，<set name="ministers" cascade="save-update" fetch="select" lazy="true">   先查一方，多方延迟加载
+	4，<set name="ministers" cascade="save-update" fetch="select" lazy="extra">  如果查询的是大小之类的，就会使用聚合函数的查询，而不使用详情查询。
+	
+	5，<set name="ministers" cascade="save-update" fetch="subselect" lazy="true">：
+	   如果主加载查询采用的是get()、load()，查询的结果返回一条数据，则与<set name="ministers" cascade="save-update" fetch="select" lazy="true">没有区别。
+	   如果主加载查询返回的是一个List就有区别了
+	String hql = "from Country";
+	List<Country> countrys = session.createQuery(hql).list();
+	for (Country country : countrys) {
+		Set<Minister> ministers = country.getMinisters();
+		System.out.println("minisyers.size=" + ministers.size());
+		for (Minister minister : ministers) {
+			System.out.println(minister);
+		}
+	}
+
+	二：单端加载优化
+	lazy的取值：false(直接加载)、proxy(使用字节码代理。关联属性是否延迟加载，由该类(主加载类)的lazy值决定。) no-proxy(不研究，平常不用)
+	fetch的取值：join(采用迫切左外连接查询)、select(采用普通select查询)。
+	1，<many-to-one name="country" class="Country" cascade="save-update" column="countryId"
+			fetch="join"/>   //lazy失效
+
+	2,<many-to-one name="country" class="Country" cascade="save-update" column="countryId"
+			fetch="select" lazy="false"/>
+
+	3,<many-to-one name="country" class="Country" cascade="save-update" column="countryId"
+			fetch="select" lazy="proxy"/> //关联属性是否采用延迟加载由主加载类的lazy的值决定，默认lazy的值为true
+	可以设为false:
+	<class name="Country" lazy="false">
+
+
+13，hibernate缓存机制：
+	1，事务范围的缓存，即一级缓存，是单Session缓存。其职能被当前事务访问。缓存的生命周期依赖于事务的生命周期，
+		当事务结束时，缓存的生命周期也会结束。事务范围的缓存使用内存作为存储介质。
+	        Session缓存是Hibernate内置的，是不能被程序员取消的。详见20-Session-cache
+		
+		hibernate快照：即数据库的副本，快照中的数据始终与DB中数据是一致的。
+
+		Session的刷新与同步：
+		 Session的刷新：Session缓存中数据的更新。Session的同步是指：将Session缓存中的数据同步更新到DB中。
+		 执行同步的时间点只有一个：事务的提交
+		 刷新时间点主要有三个：
+		 1，执行Query查询
+		 2，执行session.flush()
+		 3，执行事务的提交
+		
+		删除操作到达刷新点后的执行情况：
+		Student student = session.get(Student.class, 2);
+		// 执行到session.delete()后，并不会直接执行delete的SQL语句，
+		// 而是到达刷新点后，才会执行。这就是对session缓存数据的刷新
+		// 实际就是对堆内存中数据的更新
+		session.delete(student);
+		//刷新点
+		session.createQuery("from Student").list();
+
+		修改操作到达刷新点后的执行情况：
+		Student student = session.get(Student.class, 2);
+		student.setName("李四");
+		//student.setName("张小三"); 当执行修改操作时，即使到达刷新点是否执行update的SQL语句，
+		//还要取决于修改的数据与快照中数据的对比结果：
+		//相同，则不执行，否则执行update。
+		//session.update(student);
+		//刷新点
+		session.createQuery("from Student").list();
+
+		插入操作到达刷新点后的执行情况
+		Student student = new Student("王五",25,95.5);
+			
+		//插入操作无需到达刷新点，就会执行insert的SQL语句
+		session.save(student);
+		//刷新点
+		session.createQuery("from Student").list();
+
+		//修改刷新点：Query查询将不作为刷新点
+		session.setFlushMode(FlushMode.COMMIT);
+
+
+	2，应用范围的缓存，即二级缓存，是单SessionFactory缓存。其可以被应用程序内的所有事务共享访问。缓存的生命周期依赖于应用的生命周期，
+		当应用结束时，缓存的生命周期也会结束。应用范围的缓存使用内存或者硬盘作为存储介质。
+		二级缓存默认是关闭的。
+		Hibernate缓存的执行顺序：当hibernate根据ID访问数据对象时，首先会从一级缓存Session中查找。若查不到且配置了二级缓存，则会从二级缓存中查找。
+			若还查不到，就会查询数据库，把结果按照ID放入到缓存中。执行增、删、改操作时，会同步更新缓存。
+		
+		在主配置文件中设置开启二级缓存：
+		<!-- 开启二级缓存 -->
+		<property name="hibernate.cache.use_second_level_cache">true</property>
+
+		<!-- 注册二级缓存区域工厂 -->
+		<property name="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.EhCacheRegionFactory</property>
+		在ehcache-core-2.4.3.jar包下找到ehcache-failsafe.xml文件，改名为ehcache.xml，复制到src下即可。
+
+		在映射文件中配置如下：
+		<!-- 指定该类为缓存对象，即类缓存 -->
+		<cache usage="read-only"/>
+		在set标签下设置如下：
+		<!-- 指定该集合为缓存对象，即集合缓存 -->
+		<cache usage="read-only"/>
+
+		同样我们可以在主配置文件中设置缓存，而不用在映射文件中设置缓存：
+		<!-- 指定类缓存 -->
+		<class-cache usage="read-only" class="com.bjpowernode.beans.Country"/>
+		<class-cache usage="read-only" class="com.bjpowernode.beans.Minister"/>
+		<!-- 指定集合缓存,collection的值为全限定集合名 -->
+		<collection-cache usage="read-only" collection="com.bjpowernode.beans.Country.ministers"/>
+
+		证明二级缓存的存在：
+		//第一次查询
+		Country country = session.get(Country.class, 2);
+		System.out.println("country=" + country);
+		//第二次查询
+		Country country2 = session.get(Country.class, 2);
+		System.out.println("country=" + country2);
+		
+		//清空session缓存
+		session.clear();
+		
+		//第三次查询
+		Country country3 = session.get(Country.class, 2);
+		System.out.println("country=" + country3);
+
+		类缓存与集合缓存缓存的内容：
+		类缓存缓存的内容：缓存的是详情。
+		集合缓存缓存的内容：集合对象的所有的id
+		
+		查询缓存：
+		//证明query查询结果同样会放到一、二级缓存中
+		//第一次查询
+		String hql = "from Country where cid=2";
+		Country country = (Country) session.createQuery(hql).uniqueResult();
+		System.out.println("country=" + country);
+		//第二次查询
+		Country country2 = session.get(Country.class, 2);
+		System.out.println("country=" + country2);
+		
+		//清空session缓存
+		session.clear();
+		
+		//第三次查询
+		Country country3 = session.get(Country.class, 2);
+		System.out.println("country=" + country3);
+		
+		
+		//query查询不会从一、二级缓存中读取数据：
+		//第一次查询
+		String hql = "from Country where cid=2";
+		Country country = (Country) session.createQuery(hql).uniqueResult();
+		System.out.println("country=" + country);
+		
+		//第二次查询
+		Country country2 = (Country) session.createQuery(hql).uniqueResult();
+		System.out.println("country2=" + country2);
+		
+		//清空session缓存
+		session.clear();
+		
+		//第三次查询
+		Country country3 = (Country) session.createQuery(hql).uniqueResult();
+		System.out.println("country3=" + country3);
+
+		想要query查询从一、二缓存中读取数据如何设置？
+		1，在主配置文件设置如下：
+		<!-- 开启query缓存总开关 -->
+		<property name="hibernate.cache.use_query_cache">true</property>
+
+		2，java代码中这样书写：
+		String hql = "from Country where cid=2";
+		Country country = (Country) session.createQuery(hql).setCacheable(true).uniqueResult();
+		System.out.println("country=" + country);
+		
+		//第二次查询
+		Country country2 = (Country) session.createQuery(hql).setCacheable(true).uniqueResult();
+		System.out.println("country2=" + country2);
+		
+		//清空session缓存
+		session.clear();
+		
+		//第三次查询
+		Country country3 = (Country) session.createQuery(hql).setCacheable(true).uniqueResult();
+		System.out.println("country3=" + country3);
+
+		//query缓存内容：其从Query缓存中查找的依据不再是查询结果对象的id（一、二级缓存查找的依据是查询结果对象的id），而是query查询语句
+		// 也就是说query查询结果存放到query缓存时，其key为query查询的语句，value为查询结果。
+
+
+		// 此更新绕过了一级缓存，直接改到DB
+		String hql = "update Country set cname='AAA' where cid=2";
+		session.createQuery(hql).executeUpdate();
+
+		session.clear();
+		//按照之前的理论，这里的get()查询，会先查找已经缓存，结果没有。再查找二级缓存，结果是有的
+		// 但为什么没有从二级缓存中读取这个数据，而是从DB中进行查询？
+		//因为query的executeUpdate()方法，会修改二级缓存对象中的一个属性：updateTimestamp，修改时间戳
+		// 什么意思呢？实际上二级缓存中缓存的内容要比一级缓存对象缓存内容多一个属性，修改时间戳。
+		// 一旦这个属性被修改，那么，查询会不从二级缓存中读取数据，而是直接从DB中查询。
+		Country country3 = session.get(Country.class, 2);
+		System.out.println("二级缓存country3.name=" + country3.getCname());
+
+	3，集群范围的缓存,是多SessionFactory缓存。在集群环境中，缓存被一个机器或多个机器的进程共享。
+
+
+14，事务处理（重点）：
+	事务四大特性：
+	1，原子性：事务中的全部操作在数据库中是不可分割的，要么全部完成，要么均不执行。
+	2，一致性：几个并行执行的事务，其执行结果必须与按某一顺序串行执行的结果相一致
+	3，隔离性：事务的执行不受其他事务的干扰，事务执行的中间结果对其他事务必须是透明的。
+	4，持久性：对于任意提交事务，系统必须保证该事务对数据库的改变不被丢失，即使数据库出现故障。
+
+	封锁机制：串行化加的是表级锁，其他的是行级锁。
+	乐观锁：锁加在Java代码中
+	悲观锁：锁加在数据库中，行锁。
+	悲观锁又分为：
+	1，排它锁，也叫X锁、写锁。一旦加上了写锁，其他事务不能读取到更新后的数据。
+	2，共享锁，也叫S锁、读锁。加读锁的目的是：防止其他事务加写锁。
+
+	在主配置文件中设置隔离级别：
+	<!-- 设置事务的隔离级别 -->
+	<property name="hibernate.connection.isolation">4</property>  4是可重复读
+	
+	乐观锁详见：23-optimisticLock
+
+	//加入写锁，其他事务就不能修改该数据。一旦加了写锁，就不能加其他的锁了。
+	//Student student = session.get(Student.class, 2, LockMode.PESSIMISTIC_WRITE);
+	//加入读锁，也是不能修改数据库中的数据。一旦加入了读锁，只能再加读锁，不能再加写锁。
+	Student student = session.get(Student.class, 2, LockMode.PESSIMISTIC_READ);
+
+
+15，hibernate的注解（替换映射文件）
+	注意一点：主配置文件中
+	<!--注册实体类  -->
+	<mapping class="com.bjpowernode.beans.Student" />
+
+	一对多双向关联：详见27-annotation-one2many-d、28-annotation-one2many-d-2
+
+	自关联：详见29-annotation-one2many-d-oneself
+
+	多对多双向关联：详见30-annotation-many2many-d  注意的点：会生成两个中间表，要让一方放弃维护权即可，就只会生成一张中间表。
+
+	二级缓存注解（不过一般不用）：详见31-annotation-ehcache
+

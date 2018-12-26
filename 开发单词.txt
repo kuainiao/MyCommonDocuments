@@ -1,0 +1,100 @@
+1，arbitrary		任意的					51，particular			特定的
+2，permissible		容许的					52，individually		分别地
+3，restrictions		限制					53，experimenting		做实验
+4，prohibit		禁止					54，sections			部分
+5，ineligible		不合格的				55，dip back			重返
+6，Attempting to	试图					56，tutorials			教程
+7，typically		典型地					57，sample			样品
+8，presence		存在					58，emphasis			强调、突出
+9，exhibit		呈现					59，particular			特地的
+10，customizable	可定制的				60，warmly			热烈地
+11，powerful		强大的					61，injection			注射
+12，Comprehensive	综合的					62，principles			原理
+13，extensible		可扩展的				63，injection principles	依赖注入原理
+14，Protection		保护					64，familiarity			属性
+15，fixation		固定					65，specification		规范
+16，forgery		伪造					66，lack			缺乏
+17，integration		整合、一体化				67，scenarios			情节
+18，Optional		可选的					68，drawn to			吸引
+19，bootstrap		引导程序				69，Whilst			同时
+20，Documentation	文档					70，mentioning			提及
+21，explains		解释					71，recognise			承认
+22，Reference		参考文献				72，portable			便携式的
+23，preface		前言					73，overcomes			克服
+24，concepts		概念					74，dozens			很多，几十个
+25，distribution	分布					75，establishing		建立
+26，further		进一步的				76，principal			主要的				
+27，Architecture	体系结构				77，claim			声称			
+28，Topical		局部的、题目的、主题			78，refers to			是指
+29，interact		交互					79，decision			决策
+30，venture		风险					80，wide			宽的
+31，pursue		追求					81，relevant			相关的
+32，approach		方法、接近				82，Denotes			表示
+33，layer		层次					83，individual			个人		
+34，adopt		采用					84，milestone			里程碑
+35，successive		连续的					85，alternatively		或者
+36，tighter		紧的					86，appropriate			适当的
+37，robust		稳健的					87，candidate			候选
+38，mitigate		减轻					88，builds against		构建针对
+39，utilise		利用					89，overwhelming majority	绝大多数
+40，authorised		授权的					90，Improvements		改进				
+41，corporate		公司、企业				91，Miscellaneous		混杂的
+42，backend		后端					92，Demonstrates		演示
+43，critical		关键的					93，outlines			概述
+44，addressing		处理					94，obtaining			获得
+45，privileged		有特权的				95，Extract			提取
+46，maximizing		最大化					96，assume			假定
+47，prevent		防止					97，responsible			负责的
+48，denial		拒绝					98，instructions		指南
+49，brute		强力的					99，picked up			拾起			
+50，force		强迫					100，above			上述的
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1，equivalent		相等的
+2，makes sense		有意义的
+3，leak			泄露
+4，prompted		提示
+5，wondering		疑惑的
+6，explicitly		明确地
+7，convenient		方便地
+8，represents		代表
+9，specify		指定
+10，restricted		受限制的
+11，invoking		调用
+12，automatically	自动的
+13，capability		能力
+14，occur		发生
+15，consult		咨询
+16，covers		盖子、封面
+17，shortcut		捷径
+18，in order to		为了
+19，functionality	功能
+20，fluent		流利的
+21，indicate		表明、指示
+22，participate		参与
+23，respective		各自的
+24，Thus far		到目前为止
+25，slightly		轻微地
+26，exposing		暴露、揭露
+27，populated		生活于、移民于
+28，definition		定义
+29，block		块
+30，applicable		可应用的
+31，states that		声明
+32，onwards		向前
+33，substantially	大体上、基本上
+34，layer		层
+35，decorate		装饰
+36，facade		外表
+37，familiar with	熟悉
+38，certain		某一、必然的、已确定的
+39，conceptual		概念的
+40，abstractions	抽象化
+41，Overview		概述
+42，guarantee		保证
+43，satisfied		满意的
+44，Suite		套件
+45，capabilities	功能
+46，subscription	订阅
+47，notifications	通知
+48，exclusively		唯一地、专门地、特定地
+19，navigate		导航

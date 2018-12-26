@@ -1,0 +1,576 @@
+1,POJO类(Plain Old Java Object)：不实现任何的接口或者继承其他的类(其他jar包中的，使用JDK不算)的java类。
+
+2，版本号的意义：
+	Alpha:内测版
+	Beta：除错+增新
+	RC：除错
+	GA:普通有效版，稳定版
+	Release：发行版，最终版
+
+
+3，Struts2基本使用的jar包：E:\Tools\Struts2\struts-2.3.34\apps 下找到struts2-blank.war，复制一份，将后缀名该为zip，
+   打开，在WEB-INF -> lib的jar包即为使用的基本jar包。
+
+
+4，在MyEclipse搭建Struts2过程：
+	1，Struts2基本使用的jar包：E:\Tools\Struts2\struts-2.3.34\apps 下找到struts2-blank.war，复制一份，将后缀名该为zip，
+	   打开，在WEB-INF -> lib的jar包即为使用的基本jar包。
+	2,在web.xml中注册Struts2的启动项,跟注册Filter一样,<filter-class></filter-class>中的全限定类名为：org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter。
+	3，在src目录下创建struts.xml文件,在struts2-core.jar(核心jar包)下找到对应版本的struts.dtd文件,拷贝 ：
+	<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd"> 到struts.xml文件中，再创建<struts></struts>标签
+
+
+5，解决xml文件没有自动提示的问题（本例中struts.xml没有自动提示，是因为没有找到其struts.dtd约束文件）：
+	1，复制好：http://struts.apache.org/dtds/struts-2.3.dtd
+	2, windows -> preferences -> 输入xml 找到 Xml Catalog -> User specified Enteries -> Add 在key type中选择uri，在key中粘贴刚才复制的内容，File System中找到struts.dtd文件即可
+	
+	其意思是找到本地的约束文件来约束，就会有自动提示。
+
+
+6，解决Tomcat启动慢的问题：
+	1，E:\tomcat\apache-tomcat-7.0.82\webapps下看有没有其他文件或者文件（原始有5个文件夹，这5个文件夹不删）删掉多余的文件
+	2，Tomcat根目录下：E:\tomcat\apache-tomcat-7.0.82 删掉work文件夹 
+	上的所删的文件都是之前发布的文件，可以删掉。
+
+
+7,在MyEclipse中如何设置输入IP地址就能够访问到项目(即不再输入项目名就可以访问项目)：
+	在MyEclipse上方栏中找到部署 -> add -> server中选择custom location -> browser 中找到 E:\tomcat\apache-tomcat-7.0.82\webapps\ROOT -> 下方选择delete -> finish 即可
+
+
+8，Struts2的配置文件
+	1,struts-default.xml（重要）	位置：struts2-core-2.3.34.jar -> 下拉到下面可以找到。struts2很核心的内容都在其里面放着。
+	  Struts2一共有35种拦截器，默认执行20种。struts-default.xml中<interceptor-stack name="defaultStack">有20个拦截器，每一个action都会执行其20个拦截器。
+	 最后面有这样一句话： <default-class-ref class="com.opensymphony.xwork2.ActionSupport" />，是默认执行的类，即struts.xml文件中：
+	 <action name="toRegisterPage"> 没有class，会默认执行com.opensymphony.xwork2.ActionSupport这个类，该类中有一个execute()方法，返回结果为SUCCESS。
+			<result name="success">/register.jsp</result>
+	</action>
+	
+	179行：<result-type name="dispatcher" class="org.apache.struts2.dispatcher.ServletDispatcherResult" default="true"/>，默认是请求转发。
+		是在struts.xml文件中设置type类型为dispatcher或者redirect：
+		<action name="login" class="com.bjpowernode.actions.LoginAction">
+			<result type="redirect">/welcome.jsp?uname=</result>
+		</action>
+
+	2,default.properties（重要）放的是一些常量    位置：struts2-core-2.3.34.jar -> org.apache.struts2(第二个包) -> default.properties。
+	  打开default.properties，注意34行，将来把注释去掉，由spring框架创建对象。38行是打开着的(学习Spring框架用到)。72行是关于文件上传的，文件上传最大为2M。
+	  85行是关于扩展名：“struts.action.extension=action,,”  表名在表单提交时 <form action="test/login.action" method="POST">，多了“,”号，是login.action，不写扩展名action也可以。
+	  109行是动态方法调用。140行“struts.devMode = false”，把值该为true，意识是在开发项目时提供更多的信息，项目上线时不用(系统会变慢)。
+	
+	3,struts-plugin.xml（我们不用）：一般的插件的jar包中有此文件
+	
+	4,struts.properties（自己建立的文件）：在里面添加这样一句话：struts.action.extension=html,php,asp,htm，就能把default.properties文件中的struts.action.extension=action,,
+		 覆盖掉，就可以把扩展名改了。
+	  如果在web.xml文件中设置参数init-param>
+  		<param-name>struts.action.extension</param-name>
+  			<param-value>do</param-value>
+  		</init-param> 当以扩展名为struts.action.extension=html,php,asp,htm当中任何一个扩展名为扩专名运行，不能访问，说明web.xml中的优先级高于struts.properties文件。
+		此时 <form action="test/login.do" method="POST">，应将扩展名修改位do才可以运行找到文件。
+		同样在struts.xml中也可以设置常量：<constant name="struts.action.extension" value="go"></constant>，意思也是设置的扩专名为“go”,经测试，web.xml的优先级也高于struts.xml。
+		同样经测试struts.properties文件设置常量的优先级也高于struts.xml。
+
+		上面一大堆话的总结：设置常量的优先级由高到低：web.xml > struts.propertie > struts.xml ，虽然struts.xml优先级最低，但是我们依然是使用struts.xml设置扩展名。
+
+	
+	5,strurs.xml（最重要）：
+	 <package name="xxx-jjj-test" namespace="/" extends="struts-default"> namespace必须带有“/”，可以只写“/”，还可以这样写namespace="/xxx/ooo/test"等。
+	 注意：我们一般在命名name与namespace的值的时候是相关的，即名字类似。只是一种规范，其实不这样也可以。
+	
+	如何修改action中的execute方法？
+	<action name="some" class="com.bjpowernode.actions.LoginAction" method="doSome">  //修改execute()方法名为doSome
+			<result name="success">/welcome.jsp</result>
+	</action>
+	<action name="second" class="com.bjpowernode.actions.LoginAction" method="doSecond">
+			<result name="success">/welcome.jsp</result>
+	</action>
+	总结：一个action对应的是一个方法，action是方法级别的。
+	
+
+	<action name="second" class="com.bjpowernode.actions.LoginAction" method="doSecond">
+		<!--name属性的默认值是success,如果你的返回值是success，可以省略掉  -->
+		<result name="success">/welcome.jsp</result>
+	</action>
+	
+	
+	包范围的全局视图:
+	<package name="xxx-ooo-test" namespace="/test" extends="struts-default">
+		<!--包范围的全局视图(如果还有其他的包package标签，就不能共享)：下面两个action都有的result,只是为了解决代码的冗余而写到全局视图里  -->
+		<global-results>
+			<result name="ar">/apage.jsp</result>
+			<result name="br">/bpage.jsp</result>
+		</global-results>
+		<action name="first" class="com.bjpowernode.actions.SomeAction" method="doFirst">
+			<result >/success.jsp</result>
+		</action>
+		<action name="second" class="com.bjpowernode.actions.SomeAction" method="doSecond">
+			<result name="welcome">/welcome.jsp</result>
+		</action>
+	</package>
+
+	抽象包：就是用来给其他包继承的
+	<!-- 该包不再访问就可以把namespace属性去掉，添加abstract=true属性后该包就不能定义action -->
+	<package name="basePackage"  extends="struts-default" abstract="true">
+		<!--应用范围的全局视图  -->
+		<global-results>
+			<result name="ar">/apage.jsp</result>
+			<result name="br">/bpage.jsp</result>
+		</global-results>
+	</package>
+
+	
+	为应用指定多个配置文件：
+	<!--包含 其他的两个子配置文件。注意：看似把这两个文件引入进来，其实是静态引入(系统的是把这两个文件的内容复制到struts.xml文件中，
+	所以这两个子配置文件的name属性的值、namespace属性的值都不能相同)  -->
+	<!-- <include file="struts-base.xml"/>
+	<include file="struts-actions.xml"/> -->
+	
+	<!--如果子配置文件过多可以使用通配符  -->
+	<include file="struts-*.xml"/>
+	如果子配置文件过多，可以在src下建立一个文件件,例如resource把子配置文件都放入其内(此时file属性的值也就是路径要改变)，
+	但是注意不能把struts.xml文件放入resources文件夹内，系统会找不到。例如：
+	<include file="resources/struts-*.xml"/>
+	
+
+	6,web.xml
+
+
+
+
+9，在Action中获取ServletAPI：
+	1，通过ActionContext获取(重要)：
+	//下面的方式获取到的仅仅是对这些ServletAPI的域空间，而不是真正的ServletAPI
+		
+	//向request域空间中放入数据(注意，暂且这样认为放入到了request域空间中数据，但这种理解是不对的)
+	ActionContext.getContext().put("rep", "req_value");
+	//向session域空间中放入数据
+	ActionContext.getContext().getSession().put("ses", "ses_value");
+	//向application(ServletContext)域空间中放入数据
+	ActionContext.getContext().getApplication().put("app", "app_value");
+
+	
+	2，通过ServletActionContext获取(重要)：
+	//下面的方式获取到的是真正的ServletAPI
+		
+	//向request域空间中放入数据(这是真正的request)
+	HttpServletRequest request = ServletActionContext.getRequest();
+	request.setAttribute("req", "req_value");
+	//向session域空间中放入数据
+	request.getSession().setAttribute("ses", "ses_value");
+	//向application(ServletContext)域空间中放入数据
+	ServletActionContext.getServletContext().setAttribute("app", "app_value");
+
+	3,通过实现特定的接口获取(了解)：
+		要继承三个方法：
+		public class SomeAction implements RequestAware, SessionAware, ApplicationAware 
+
+
+10，OGNL与值栈：
+	OGNL：是一种强大的表达式语言，是一个第三方开源项目。
+	
+	对于方法：
+	random = <s:property value="@java.lang.Math@random() * 100"/> 
+	要想获取到random()方法(访问方法要经过struts2的允许),需在default.properties文件中约208行复制struts.ognl.allowStaticMethodAccess
+	到sturts.xml文件中这样设置：
+	<constant name="struts.ognl.allowStaticMethodAccess" value="true"></constant> 才能获取到。
+
+	
+	
+	值栈与context关系图:
+
+	             |
+                     |--application
+                     |
+                     |--session
+       context map---|
+                     |--value stack(root)
+                     |
+                     |--action (the current action)  action实例一旦创建就会放入root和context中
+                     |
+                     |--request   底层执行的是request.getAttribute() ，数据从属性中找。 request数据的查找顺序：request -> root -> context。
+                     |
+                     |--parameters  底层执行的是request.getParameter()，数据从参数中找
+                     |
+                     |--attr (searches page, request, session, then application scopes)  如果写的是#attr.xxx会从括号里按顺序分别查找
+
+	注意：ActionContext就是context，只是给context起别名叫ActionContext
+
+	一个request对应一个action，一个action对应一个ValueStack,值栈的生命周期应该与request的生命周期一样。所以值栈是放在request的域中，用request.getAttribute()获取。
+	action对象是多例的。
+	
+	root(根)对象是值栈，值栈的访问不用加“#”号，其他对象的访问需要使用“#”号。
+	
+	在底层中：this.context = Ognl.createDefaultContext(this.root, accessor, new OgnlTypeConverterWrapper(xworkConverter), securityMemberAccess);
+	说明Map context是OGNL创建的。
+
+	一次请求对应一次action、一次值栈，值栈的生命周期与request一样，值栈是放在request域中的。
+	底层代码：context.put(VALUE_STACK, this); 说明把值栈放进了context这个Map中。
+
+	下面是具体获取值栈的过程：
+	String key = ServletActionContext.STRUTS_VALUESTACK_KEY;
+	HttpServletRequest request = ServletActionContext.getRequest();
+	ValueStack vs = (ValueStack) request.getAttribute(key);
+
+	另外一种获取值栈的方法：
+	ValueStack vs2 = ActionContext.getContext().getValueStack();
+	
+	一，向root显式的放入数据:
+	1,向root中放入无名对象：
+	//从request中获取ValueStack对象
+	String key = ServletActionContext.STRUTS_VALUESTACK_KEY;//获取request.getAttribute()方法中的key。
+	HttpServletRequest request = ServletActionContext.getRequest();
+	ValueStack vs = (ValueStack) request.getAttribute(key);
+		
+	//向root属性中直接放入无名对象(为什么是无名对象？因为root是List集合,List中的元素是无名，这一点可对比Map集合，Map中的key就是名，而List没有key，则是无名。)
+	Student student = new Student("张三",23);
+	vs.getRoot().push(student);
+	
+	//向值栈中直接放入无名对象,但实际也是放入到其root属性中(不信可查看源码)
+	Student student2 = new Student("李四",24);
+	vs.push(student2);
+
+
+	2,向root中放入有名对象：
+
+	对于get 和set方法如果返回值是boolean值则写成is代替get 或者 set
+	HashMap中有一个方法是isEmpty()，就是上面的例子，所以empty是HashMap的一个属性。Boolean值为null就是false的意思。
+
+	//向值栈中放入有名对象，即Map。
+	Student student3 = new Student("王五",25);
+	Map<String,Student> map =  new HashMap<String, Student>();
+	map.put("student3", student3);
+	vs.push(map);
+		
+	Student student4 = new Student("赵六",26);
+	vs.set("student4", student4); //set()方法本质和上面的vs.push()方法一样。
+	
+	//将root当作是ArrayList放入数据
+	Student student5 = new Student("田七",27);
+	vs.getRoot().add(student5); //这样是往后添加
+	vs.getRoot().add(0,student5); //这样加才会放到栈顶。
+	Student stu = (Student) vs.getRoot().get(6);
+	System.out.println(stu);
+
+
+
+	二，向root隐式的放入数据（重点）:
+	
+	action创建好了，就会把数据放入到root中。
+
+	<!--#request.name的底层执行的是request.getAttribute("name") 读的是属性 -->
+	 #request.name = <s:property value="#request.name"/><br>
+  	#request.age = <s:property value="#request.age"/><br>
+  	<!--#parameters.name的底层执行的是request.getParameter("name") 读的是参数 -->
+  	#parameters.name = <s:property value="#parameters.name"/><br>
+  	#parameters.age = <s:property value="#parameters.age"/><br>
+
+	root里面的数据加载顺序：
+	1，先从root里面找。
+	2，如果root里面没有数据，再从context中找数据。
+
+	request的数据加载顺序：
+	1,先从request的域空间中找
+	2，若1中没有，从root中找
+	3,如2也没有，从context中找
+
+
+11,ognl创建和遍历List集合（了解）：
+	<!--set标签定义的对象均存放在context中  -->
+  	<s:set name="myList" value="{'zs','ls','ww'}"/> 
+  	<s:iterator value="#myList"> <!--iterator标签会默认将当前的迭代对象放入到值栈栈顶  -->
+  		<s:property/><br>	<!--property标签默认会输出值栈栈顶元素  -->
+  	</s:iterator>
+
+
+	集合元素的投影：
+	<br>----------------创建三个Student对象------------------<br>
+  	<s:bean name="com.bjpowernode.Student" id="student3">
+  		<s:param name="name" value="'张三'"/>
+  		<s:param name="age" value="23"/>
+  	</s:bean>
+  	<s:bean name="com.bjpowernode.Student" id="student4">
+  		<s:param name="name" value="'李四'"/>
+  		<s:param name="age" value="24"/>
+  	</s:bean>
+  	<s:bean name="com.bjpowernode.Student" id="student5">
+  		<s:param name="name" value="'王五'"/>
+  		<s:param name="age" value="25"/>
+  	</s:bean>
+	
+	<br>----------------将前面的三个Student对象的name属性值再组成一个List------------------<br>
+  	<s:set name="students" value="{#student3,#student4,#student5}"></s:set>
+  	<s:set name="studentsName" value="#students.{name}"/>  //这里就是投影
+  	<s:iterator value="studentsName">
+  		<s:property/><br>
+  	</s:iterator>
+
+	集合查询：
+	<br>----------------集合查询：查询前面的三个Student对象中年龄大于23岁的所有人------------------<br>
+  	<s:iterator value="#students.{?#this.age > 23}">
+  		<s:property/><br>
+  	</s:iterator>
+  	
+  	<br>----------------集合查询：查询前面的三个Student对象中年龄大于23岁的所有人中的第一个人------------------<br>
+  	<s:iterator value="#students.{^#this.age > 23}">
+  		<s:property/><br>
+  	</s:iterator>
+  	
+  	<br>----------------集合查询：查询前面的三个Student对象中年龄大于23岁的所有人中的第最后个人------------------<br>
+  	<s:iterator value="#students.{$#this.age > 23}">
+  		<s:property/><br>
+  	</s:iterator>
+
+
+12，动态调用方法：
+	default.properties文件109行struts.enable.DynamicMethodInvocation = false，动态方法调用默认是关闭的。要手动开启
+	在struts.xml文件中添加constant。
+	<struts>
+	<constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+	<package name="xxx" namespace="/test" extends="struts-default">
+		<action name="some" class="com.bjpowernode.actions.SomeAction" >
+			<result >/welcome.jsp</result>
+		</action>
+	</package>
+	</struts>
+	在地址栏中输入：
+	http://127.0.0.1/24-dynamicMethodInvocation/test/some!doSecond.action   (这样动态调用方法:!+方法名)
+
+	通配符(wildcard)动态开启方法(掌握)：
+	<package name="xxx" namespace="/test" extends="struts-default">
+		<!-- 通配符动态调用方法原理：*的内容就是method="{1}"中{1}的内容 -->
+		<action name="some_*" class="com.bjpowernode.actions.SomeAction" method="{1}">   name="some_*",下划线_不是必须的，也可以用!代替，不过一般用下划线_。
+			<result >/welcome.jsp</result>
+		</action>
+	</package>
+	地址栏中这样输入：
+	/test/some_doSecond.action (省略了web应用的根路径)
+
+
+
+13,接收请求参数：
+	1，属性驱动（这种方式不常用）：就是前面的在一个类中定义一个属性的名与表单中的name属性值相同的。
+
+	2,域驱动（不常用）：详见 26-receiveObject。域驱动有一个特殊类型：集合数据接收，详见28-receiveCollection
+
+	3,模型驱动（常用）：
+	 Action类需要实现ModelDriven接口，详见27-ModelDriven.
+
+
+14，类型转换器：
+	详见29-typeConverter 默认的日期格式为yyyy-MM-dd
+
+	自定义类型转换器：自定义的转换器继承自DefaultTypeConverter(是struts2的DefaultTypeConverter，不是ognl的)
+	1,局部类型转换器：只对某个类的某个属性起作用。要进行注册，例如注册的文件名为：LoginAction-conversion.properties。
+	文件内容为：
+	birthday=com.bjpowernode.typeconverters.MyDateConverter  birthday为要转换的属性名，其值为自定义的转换器全限定类名。
+
+	实现当表单类型不能转换时，自动跳转回来(例如年龄写成:23a，就不能转换成int类型了。)：
+	action类继承ActionSupport,不能进行类型转换时，会跳转到input视图。
+	此时修改struts.xml文件：<result name="input">/index.jsp</result>，就可以跳转回去注册页面。
+
+	实现回显：
+	<s:form action="test/login.action" method="POST">
+  		<s:textfield name="age" lable="年龄"></s:textfield>
+  		<s:textfield name="birthday" lable="生日"></s:textfield>
+  		<s:submit value="登录"></s:submit>
+  	</s:form>
+	当输入错误时提示如下：
+	Invalid field value for field "age". 把英文提示修改成中文：
+	在自己所对应的action包下下建立一个文件LoginAction.properties (LoginAction要对应相应的action类名。)
+	在文件下这样写：
+	invalid.fieldvalue.age=年龄应该是整数
+
+
+15，数据验证（服务端的数据验证）：
+	strutsd的<s:fielderror/>标签，可以显示页面的错误信息。
+
+	1,手工编写代码实现数据验证：详见31-validation 和32-validation-2   action要继承自ActionSupport
+
+	2,基于xml配置方式实现输入数据验证：
+	action同样要继承ActionSupport，用于跳转到input视图。
+	XML配置文件要放在Action类所在的包中，该XML文件的取名应遵守ActionClassName(Action类名)-validation.xml。
+	该XML文件的约束从xwork-core.jar -> xwork-validator-1.0.3-dtd 复制:
+	<!DOCTYPE validators PUBLIC
+  		"-//Apache Struts//XWork Validator 1.0.3//EN"
+  		"http://struts.apache.org/dtds/xwork-validator-1.0.3.dtd"> 到该XML文件中。
+
+	<validators>
+		<field name="name">
+			<field-validator type="requiredstring">   type=是拦截器类型，拦截器可在 xwork-core.jar - > com.opensymphony-xwork2.validator.validators 包 -> default.xml中找到。
+				<message>用户名不能为空</message>		   requiredstring是非空字符串
+			</field-validator>
+		</field>
+		<field name="mobile">
+			<field-validator type="requiredstring">
+				<message>手机号不能为空</message>
+			</field-validator>
+			<field-validator type="regx">
+				<param name="regx"><![CDATA[^1[24578]\d{9}$]]></param>
+			<message>手机号格式不正确</message>
+		</field-validator>
+	</field>
+	</validators>  	
+
+	在众多验证器里需要注意：int、long、double、与date是范围验证器，而不是类型验证器。例如输入年龄为23a,是不会进行验证的(会在类型转换时就出错了)，而输入age=1000,就会进行验证。
+
+
+16，Action类的执行原理及顺序：
+	(1)类型转换:类型转换是在Action调用相应属性的set方法之前发生的，类型转换失败，不影响程序的运行。
+	(2)set方法:无论类型转换是否成功，都将执行该属性的set方法。只不过，类型转换失败，会设置该属性值为null(为null值时，当进行验证时就会失败)。
+	(3)数据验证:
+	(4)Action方法：
+
+
+17，权限拦截器：
+	需求：只有经过登录的用户方可访问Action中的方法，否则，将返回“无权访问”的提示
+	自定义一个拦截器要继承AbstractInterceptor，并且要在struts.xml中注册：
+	例如：
+	<interceptors>
+		<interceptor name="permissionInterceptor" class="com.bjpowernode.interceptors.PermissionInterceptor"></interceptor>
+	</interceptors>
+	并且该拦截器要绑定到某个Action,按照如下方法做：
+	<package name="xxx-ooo-test" namespace="/test" extends="struts-default">
+		<interceptors>
+			<interceptor name="permissionInterceptor" class="com.bjpowernode.interceptors.PermissionInterceptor"></interceptor>
+		</interceptors>
+		<action name="system" class="com.bjpowernode.actions.SystemAction"> 
+			<result >/welcome.jsp</result>
+			<interceptor-ref name="permissionInterceptor"></interceptor-ref>
+		</action>
+	</package>
+	此时如果要访问SystemAction就会被permissionInterceptor拦截器拦截。注意：一旦Action显示的绑定到某个拦截器，系统默认的拦截器(20个拦截器)就不会执行。
+	但是系统的拦截器必须要执行，可按如下添加
+	<interceptor-ref name="defaultStack"/>到上面。
+	详见35-permissionInterceptor。
+
+	注册拦截器时还可以自定义拦截器栈的方式：
+	<interceptors>
+		<interceptor name="permissionInterceptor" class="com.bjpowernode.interceptors.PermissionInterceptor"/>
+		<interceptor-stack name="permissionStack">
+		<interceptor-ref name="permissionInterceptor"/>
+		<interceptor-ref name="defaultStack"/>
+		</interceptor-stack>
+	</interceptors>
+	<action name="system" class="com.bjpowernode.actions.SystemAction">
+		<result >/welcome.jsp</result>
+		<result name="fail">/fail.jsp</result>
+		<interceptor-ref name="permissionStack"></interceptor-ref>
+	</action>
+
+	默认拦截器的注册：
+	<!-- 下面的每一个action都会默认执行该拦截器，如果下面的Action显示的引用某个拦截器。该拦截器就不会执行 -->
+	<default-interceptor-ref name="permissionStack"/>
+	<action name="system" class="com.bjpowernode.actions.SystemAction">
+		<result >/welcome.jsp</result>
+		<result name="fail">/fail.jsp</result>
+	</action>
+
+
+18，包的命名规则：
+//下面的缩写是包中的“功能顶层包”名称
+//包的命名一般分为4-5级：
+//甲方公司域名倒序 + 项目名称 + 模块名称  + 功能顶层包 + 实现类子包impl
+//com.bjpowernode.oa.system.users.dao.impl
+//这样命名的好处是(为什么这样命名？)：为了保证这些包中所定义的资源具有“全球唯一性”
+
+
+//dto：data transfer object 数据传输对象，这里放的都是用于承载数据的属性
+//vo：value object 值对象,这里放的都是用于承载数据的属性，一般不对其进行持久化(不往数据库里写)
+//dao：data access object 数据访问对象，这里放的都是访问DB的方法
+//bean：一般beans包中存放的都是数据承载Bean，即实体类，用于持久化的类，一般称为实体类。而实体类中肯定要有主键属性(一般为id)
+//entity：实体，与bean包相同
+
+
+
+19,方法过滤拦截器：可以指定哪些方法执行Action方法之前经过拦截器。
+	自定义的拦截器类要继承抽象类MethodFilterInterceptor，并且实现其doIntercept()方法。在struts.xml中注册如下（具体见38-methFilterInterceptor）：
+	<interceptor name="myInterceptor" class="com.bjpowernode.interceptors.MyInterceptor">
+		<!-- <param name="includeMethods">doFirst,doThird</param> -->    包括doFirst()、doThird()，即这两个方法过拦截器
+		<param name="excludeMethods">doSecond</param>			排除doSecond()方法，即doSecond()不过拦截器。注意：includeMethod、excludeMethod只用其中的一个。
+	</interceptor>
+
+	拦截器的注册顺序：
+	<interceptor-stack name="myStack">
+		<!--拦截器的执行顺序与这里的注册顺序是一致的  -->
+		<interceptor-ref name="twoInterceptor"/>
+		<interceptor-ref name="oneInterceptor"/>
+		<interceptor-ref name="defaultStack"/>
+	</interceptor-stack>
+	
+
+
+20，国际化(了解)：是程序在不做任何修改的情况下，就可以使用在不同的语言环境中。原理：通过修改浏览器的语言和资源文件的文件名进行匹配。注意properties文件的命名规则
+	全局范围的资源文件：动态参数赋值（详见40-i18n项目）
+	action.login.message2=you are in system,{0}!  占位符从0开始
+	welcome.text.msg=welcome you!
+	welcome.text.msg2=welcome you,{0}!  .properties文件需要注册
+
+	包范围的资源文件：详见41-i18n-2。.properties文件不需要注册  properties命名规则为：package_en_US.properties
+
+	Action范围资源文件：properties命名规则，例如：LoginAction_en_US.properties  .properties文件不需要注册
+
+
+21,文件上传：struts2框架已经自动上传了文件：
+	public String execute(){
+		try {
+			//String path = "d:/images"; //该文件夹会自动创建  
+			String path = ServletActionContext.getServletContext().getRealPath("/images");  //我们一般用这个路径 
+			File destFile = new File(path ,imgFileName);					结果保存在：E:\tomcat\apache-tomcat-7.0.82\webapps\44-fileUpload-single\images
+			FileUtils.copyFile(img, destFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return "success";
+	}
+	
+	struts默认的文件上传大小是2M，可以在default.properties文件72行查看到：struts.multipart.maxSize=2097152
+	可以在struts.xml文件中修改文件上传的大小：
+	<constant name="struts.multipart.maxSiz" value="20971520"></constant> //设置文件上传大小为20M。
+
+	限制上传文件的扩展名：
+	<interceptor-ref name="defaultStack">
+		<param name="fileUpload.allowedExtensions">jpg,png</param>  //只允许上传jpg、png类型的文件
+	</interceptor-ref>
+
+
+22，文件下载：
+	设置文件下载时以附件的形式保存:
+	<package name="xxx" namespace="/test" extends="struts-default">
+		<action name="download" class="com.bjpowernode.actions.DownloadAction">
+			<result type="stream">
+				<param name="contentDisposition">attachment;filename=${fileName}</param> <!--下载以附件的形式保存 filename是下载时显示的文件名 -->
+				<param name="inputName">is</param>  <!-- is是Action中流的属性 -->
+			</result>
+		</action>
+	</package>
+	
+	<param name="inputName">is</param>  中name的默认值就是inputName，inputName的默认值就是inputStream。如果在Action中把is改成inputStream。
+	就可以把<param name="inputName">is</param> 这段代码删掉。
+
+
+23，防止表单重复提交的功能
+	表单中添加<s:token>标签(当然了要导入<%@ taglib uri="/struts-tags" prefix="s"%>)
+	 <form action="test/login" method="POST">
+		<s:token/>
+		姓名:<input type="text" name="name"/> <br>
+		年龄:<input type="text" name="age"/> <br>
+		<input type="submit" value="登录"/>
+	</form>
+	Action类继承ActionSupport，当表单重复提交时会转入invalid.token视图，此时在struts.xml文件中添加：
+	<result name="invalid.token">/message.jsp</result>就会转入message.jsp页面，在该页面中就可以输入提示信息。
+
+
+24,struts2标签(不建议使用，能使用JSTL标签就尽量使用JSTL)：
+	使用struts2标签能够解决麻烦的有：<s:token/>、form表单的回显等
+
+
+25，struts2的注解：
+	1，使用struts2注解，需要使用struts2-convertion-plugin-2.3.24.jar。该jar包在：E:\Tools\Struts2\struts-2.3.34\lib中找
+	2，Action类所在的包的功能顶层包，必须为action、actions、struts、struts2中之一。
+	3，在使用struts2注解，主要是用于完成Action类的定义，但诸如常量定义、拦截器定义等还需要在struts.xml中完成。
+	   所以需要根据Struts2配置文件struts.xml是否删除。
+
+	注解、枚举、类、接口都属于类层级的，首字母必须大写。
+
+	注解和注解单元间不出现代码即可，可以出现注释。
+

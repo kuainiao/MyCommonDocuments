@@ -1,0 +1,135 @@
+1,Maven常用命令：
+	mvn Tomcat:run 一键启动
+	mvn Clean	清理(清理编译好会生成的target文件)
+	mvn compile	编译会生成target文件夹(只是编译mian里的文件，test里的并没有编译)
+	mvn test	只编译test目录里的文件
+	mvn package	web项目打包成war包
+	mvn install	把项目发布到本地仓库，值得注意的是：web项目发布到本地仓库没有用，因为其生成的是war包。java项目生成jar包才有用
+	mvn site	生成一个站点，静态页面用于对该项目的描述。
+
+2，Maven的生命周期：
+	Default生命周期：执行install命令时会把compile、test、package这三个命令先执行。 deploy(发布到私服)
+	Clean生命周期：clean
+
+	不同的生命周期的命令可以同时执行：mvn clean package
+
+
+3,依赖范围(Scope)：
+	Compile,例如struts2-core.jar：编译、运行、测试、打包都需要。
+	Provided，例如jsp-api.jar包：编译时需要，测试时也需要，运行时不需要，打包时不需要。
+	Test，例如junit包：编译时不需要，测试时需要，运行时不需要,打包时不需要。
+	RunTime，例如数据库驱动包：编译时不需要，测试时需要，运行时需要，打包时需要。
+
+4，Maven默认使用的是tomcat6，如果要使用tomcat7在pom.xml文件中设置如下：此时启动命令为tomcat7:run
+	<plugin>
+		<groupId>org.apache.tomcat.maven</groupId>
+		<artifactId>tomcat7-maven-plugin</artifactId>
+		<version>2.2</version>
+		<configuration>
+			<path>/f</path> //访问路径
+		</configuration>
+	</plugin>
+
+
+
+5，依赖版本冲突解决：
+	1，调节原则：
+	1.1，路径近者原则：自己手动添加
+	1.2，第一声明者原则：把依赖放在前面
+
+	2,排除原则：
+	<dependency>
+		<groupId>org.apache.struts</groupId>
+		<artifactId>struts2-spring-plugin</artifactId>
+		<version>2.3.24</version>
+		<exclusions>   // 排除，不使用下面的spring-beans jar包
+			<exclusion>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-beans</artifactId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+
+	3,版本锁定：在pom.xml文件中
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-beans</artifactId>
+				<version>4.2.4.RELEASE</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	还可以这么用：
+	<properties>
+		<spring.version>4.2.4.RELEASE</spring.version>
+	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-context</artifactId>
+				<version>${spring.version}</version>  //注意这里
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-context</artifactId>  //这里就不用指定版本了，即使指定了版本也没有用。
+	</dependency>
+
+
+6,分模块开发：
+	
+	父工程的创建：选择pom,把jar包放在父工程
+
+	classpath*:applicationContext-*.xml    classpath* 表示配置文件还可以从jar中拿。
+
+
+7,私服：
+	访问地址：http://localhost:8081/nexus/#welcome
+	账户和密码：admin/admin123
+
+	仓库类型：
+	Virtual：虚拟仓库
+	Proxy：代理仓库
+	Hosted：宿主仓库 本地仓库
+	Group
+
+	如何发布到私服：
+	1，在pom.xml中应指明路径：例如：
+	<distributionManagement>
+  	<repository>
+  		<id>releases</id>
+	<url>http://localhost:8081/nexus/content/repositories/releases/</url>
+  	</repository> 
+  	<snapshotRepository>
+  		<id>snapshots</id>
+	<url>http://localhost:8081/nexus/content/repositories/snapshots/</url>
+  	</snapshotRepository> 
+	</distributionManagement>
+
+	2，另外还要在maven的setting.xml文件中给出登录名和密码：
+	<server>
+	      <id>releases</id>
+	      <username>admin</username>
+	      <password>admin123</password>
+	</server>
+	<server>
+	      <id>snapshots</id>
+	      <username>admin</username>
+	      <password>admin123</password>
+	 </server>
+
+	 3,从私服中下载：
+	 详见setting.xml文件259-296行。
+	
+	
+8,在dos窗口把本地jar包发布到maven仓库：
+	mvn install:install-file -Dfile=D:\JDK8\jre\lib\rt.jar -DgroupId=rt -DartifactId=rt -Dversion=1.0 -Dpackaging=jar   //切记末尾不要加“;”
+	
+	例如：
+	mvn install:install-file -Dfile=D:\tomcat7-maven-plugin-2.2.jar -DgroupId=org.apache.tomcat.maven -DartifactId=tomcat7-maven-plugin -Dversion=2.2 -Dpackaging=jar

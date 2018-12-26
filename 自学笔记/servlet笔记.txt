@@ -1,0 +1,327 @@
+1，servlet是单例多线程的。
+
+2，Servlet特征：
+	1，一个servlet实例只会执行一次无参构造器与init方法，并且是在第一次访问时执行。init()方法是单线程的
+	2，用户每提交一次当前servlet的请求，就会执行一次service方法。service()方法是多线程的
+	3，一个servlet实例只会执行一次destory()方法，在应用停止时执行。
+	4，servlet是单例多线程的。
+	5，由于servlet是单例多线程的，所以为了保证其线程安全性，一般情况下是不为servlet类定义
+	    可修改的成员变量的，因为每个线程均可修改这个成员变量，会出现线程安全问题。
+	6，默认情况下，servlet在web容器启动时是不会被实例化的。如果在web.xml文件中这样设置：<load-on-startup>1</load-on-startup>就会在web容器启动时，创建和初始化servlet。
+
+
+3，<load-on-startup>0</load-on-startup>表示的是一启动服务器就会创建一个servlet实例，0表示的是优先级，往上增加，优先级降低。为负数和0就不会创建。
+
+
+4，ServletContext通过getInitParameterNames()方法获取的参数名，所有的servlet都能访问，而ServletConfig通过getInitParameterNames()方法获取的参数名，
+   只能是当前servlet访问。
+   ServletConfig是对web.xml文件中Servlet注册信息的一个抽象。
+	
+
+5，getContextPath()获取的是应用的名称。
+
+
+6，关于欢迎页面：<welcome-file-list>
+		    <welcome-file>index.jsp</welcome-file>
+		    <welcome-file>index2.jsp</welcome-file>
+		  </welcome-file-list>
+
+		 会找第一个当欢迎页面，如果自己所建的项目没有设置欢迎页面，那么系统会从Tomcat的conf目录下的web.xml文件里找所设置好的欢迎页面。
+
+
+7，<url-pattern>请求URL</url-pattern>，可以有多个。另外<url-pattern>/aaa/*</url-pattern> *表示/aaa后面可以乱写，例如：http://desktop-jv97d0u:8080/04-urlPattern/aaa/jdos/dsiojsiod
+   全路径匹配：<url-pattern>/*</url-pattern>，会把所有请求拦截(所有文件都不会执行，直接跳转到Servlet)。
+	       <url-pattern>/</url-pattern> 也是全路径匹配，但是请求jsp（动态资源）文件时，不会被拦截(照样执行jsp文件，而不会跳转到Servlet)。
+   后缀模式：例如：<url-pattern>*.do</url-pattern>  能够拦截所有以.do结尾的请求，例如：http://desktop-jv97d0u:8080/04-urlPattern/aaa.do会被拦截掉，执行servlet。
+		   注意后缀do不是唯一的，可以随意更改。不过一般使用的是do或者action。
+
+    <url-pattern>/xxx/*.do</url-pattern> 后缀形式不能与路径形式混用。
+
+ 
+
+8，在myeclipse或者eclipse中对于web项目直接复制project的，要右击属性修改掉Context root的名字与project的名字一致。
+
+
+9，URI匹配原则：路径优先后缀 <url-pattern>/xxx/*</url-pattern> 优先于<url-pattern>*.do</url-pattern>
+	     精确路径优先匹配原则：<url-pattern>/xxx/second</url-pattern> 优先于 <url-pattern>/xxx/*</url-pattern> 例如http://desktop-jv97d0u:8080/06-urlPattern/xxx/second
+	     最长路径匹配原则：<url-pattern>/xxx/ooo/*</url-pattern> 优先于 <url-pattern>/xxx/*</url-pattern> ，例如http://desktop-jv97d0u:8080/06-urlPattern/xxx/ooo/djksld
+
+10，在java中子类初始化时一定会调用父类的无参构造方法。
+
+11，请求的生命周期：
+	一次请求对应一次请求对象，另外一次请求对应另外一个请求对象，与之前的请求对象没有任何关系。
+	HttpServletRequest实例的生命周期很短暂。
+
+
+
+12，请求参数：
+	HttpServletRequest对于请求中所携带的参数是以Map的形式接收的，并且该Map的key为String，value为String数组。
+	value是String数组的原因：当为复选框时,例如：
+		爱好<br/>
+		<input type="checkbox" name="hobby" value="running">跑步
+		<input type="checkbox" name="hobby" value="swimming">游泳
+		<input type="checkbox" name="hobby" value="reading">看书
+		一个key对应多个value值。
+
+
+13，getParammeter()本质上等同于getParammeterValues()[0];即getParammeter("name")=getParammeterValues("name")[0]。
+
+
+14，域属性：
+	SomeServlet这样设置：
+	request.setAttribute("company","北京动力节点");
+	request.setAttribute("address","北京大兴");
+	request.removeAttribute("address");
+	request.getRequestDispatcher("/otherServlet").forward(request, response);
+
+	OtherServlet这样接收：
+	String company = (String) request.getAttribute("company");
+	String address = (String) request.getAttribute("address");
+	
+	//获取请求中的所有域属性名称
+	Enumeration<String> names = request.getAttributeNames();
+	while(names.hasMoreElements()){
+		String name = names.nextElement();
+		System.out.println(name + "====" + request.getAttribute(name));
+	}
+	
+	即能够实现请求的传递。
+
+
+15，request其他的几个方法：
+	//获取请求URL
+	StringBuffer requestURL = request.getRequestURL();
+	System.out.println("requestURL=" + requestURL);  //requestURL=http://desktop-jv97d0u:8080/16-requsetOtherMethod/some
+		
+	//获取请求URI
+	String requestURI = request.getRequestURI();
+	System.out.println("requestURI="+requestURI); ///16-requsetOtherMethod/some
+		
+	//获取当前web应用的根路径(很重要)
+	String contextPath = request.getContextPath();
+	System.out.println("contextPath="+contextPath); ///16-requsetOtherMethod
+		
+	//获取客服端IP
+	String clientIP = request.getRemoteAddr();
+	System.out.println("remoteAddr="+clientIP);
+
+	//与 <url-pattern>/xxx/ooo/jjj</url-pattern>中有关，获取其精确部分
+	String servletPath = request.getServletPath();
+	System.out.println("servletPath="+servletPath); ///xxx/ooo/jjj
+		
+	//获取<url-pattern>/xxx/ooo/jjj</url-pattern>中非精确部分
+	String pathInfo = request.getPathInfo();
+	System.out.println("pathInfo="+pathInfo); //null
+
+
+
+16,关于request中文乱码问题：
+	提交表单时name输入中文名字会产生乱码，例如：姓名：<input type="text" name="name"/><br/>，为什么会乱码？
+	因为当提交例如name="李四"时，使用HttpWatch查看，底层是这样提交的：name=%E6%9D%8E%E5%9B%9B,这些字节以%开头，十六进制形式出现。
+	%E6%9D%8E%E5%9B%9B，以%号隔开共6个字节，因为在html中以utf-8编码，一个中文一般占3个字节，李四刚好占6个字节。
+	Tomcat默认的编码方式是：ISO-8859-1，页面的编码方式与Tomcat的编码方式不一样就会产生乱码。
+
+	Tomcat9解决了GET方式请求(POST方式没有解决)的乱码问题，Tomcat9以下没有解决乱码问题。
+
+	解决POST提交方法：request.setCharacterEncoding("UTF-8") 解决的是POST请求方式的编码
+	使用MyEclipse时解决GET提交方法：在Tomcat的配置文件server.xml文件中71行添加URIEncoding="UTF-8"，添加后如下：
+	<Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" URIEncoding="UTF-8"/>
+
+	使用Eclipse时解决GET提交方法，点击左侧server目录，找到并打开server.xml文件，在65行左右找到<Connector...>，与上面的添加方式一样。
+	这种修改server.xml文件的方式并不好，因为要重启服务器，当服务器有多个虚拟主机时，重启服务器会影响到其他的虚拟主机。
+
+	
+	注意：上面的文字不用看，看下面的话就可以了！！！
+	
+	一部到位解决post,get提交乱码问题方法：String name = request.getParameter("name"); //name是表单的name="name"。
+					      byte[] bytes = name.getBytes("ISO8859-1");
+					      name = new String(bytes,"utf-8");
+					      不过此种方法效率较慢，最好的方式是：POST提交用setCharacterEncoding()方法，GET用这种方法。
+
+
+
+17，关于response中文乱码问题：
+	response.setContentType("text/html;charset=UTF-8"); //指定响应体的字符编码为utf-8
+	response.setCharacterEncoding("utf-8"); //修改的是MIME的字符编码
+		
+	//获取标准输出流
+	PrintWriter out = response.getWriter();
+
+	注意：1，setContentType()和setCharacterEncoding()必须用在获取输出流之前
+	      2，使用setCharacterEncoding()必须先用setContentType()，所以我们一般使用setContentType()就可以了，不必多此一举。
+
+
+
+18，重定向(服务器外跳转)与请求转发(服务器内跳转)：
+	重定向与请求转发两者之间很重要的一点区别：重定向无法获得用户第一次请求的属性(request,response)，因为外跳转就把对象销毁了。
+	重定向一个很重要的作用：防止表单重复提交。
+
+
+
+19，关于重定向乱码问题：
+	发送端编码：name = URLEncoder.encode(name,"utf-8");
+	接收端解码：pname = URLDecoder.decode(pname,"utf-8");
+		    pname = new String(pname.getBytes("ISO8859-1"),"UTF-8");
+	编码与解码成对出现。为什么还需要pname = new String(pname.getBytes("ISO8859-1"),"UTF-8");这句话呢？
+	因为前两句URLEncoder，URLDecoder针对的是URL的编码与解码。
+
+
+20，请求转发与重定向的区别：
+	(1)请求转发：
+	A，浏览器只发出一次请求，收到一次响应
+	B，请求转发到的资源中可以直接获取到请求中所携带的数据
+	C，浏览器地址栏显示的为用户所提交的请求路径
+	D，只能跳转到当前资源
+	E，可以访问WEB-INF下的资源
+
+
+	(2)重定向
+	A，浏览器发出两次请求，接收到两次响应
+	B，重定向到的资源不能直接获取到用户请求中所携带的数据
+	C，浏览器地址栏显示的为重定向的请求路径，而非用户提交请求的路径。也正因为如此，
+	   重定向的一个很重要作用是：防止表单重复提交。
+	D，重定向不仅可以跳转到当前应用的其他资源，也可以跳转到其他应用中资源。
+	E，不可以访问WEB-INF下的资源
+
+
+21，forward()与include()的区别：
+	1，无论是forward()还是include()，对于请求来说，都是一样的。
+	2，它们的不同点主要是集中在reponse响应。forward()请求转发的response没有被装饰，而include()的response被装饰(装饰者模式)。
+
+	forward()与include()response响应的区别：主要表现在标准输出流的开启时间不同：
+	forward():forward这个单词表示的意思是“向前”，说明当前的请求还未结束，需要继续“向前”，所以服务器就不会在这里先打开标准输出流。
+	include():include这个单词的意思是“包含”，说明当前的请求已经结束，可以对客户端进行响应了。其不仅将自己的数据写入到标准输出流，还要将其他数据包含到自己的输出流中。
+
+	以上总之一句话就是：使用forward()的Servelt，使用out.print()，不会在浏览器中打出信息，而使用include()的Servlet，使用out.print()，不仅把自己的信息在浏览器中打出，
+			    还会将所传入的Servlet的信息打出。对客服端的响应是由使用include()方法的Servlet给出的。
+			    forward是转发的另一个页面.
+			    include是把另一个页面加载到当前页面.
+
+
+
+
+22，访问路径问题：
+	绝对路径=参照路径+相对路径
+	
+	相对路径的写法有两种：1，以斜杠开头	2，以路径名称开头
+	确定相对路径的参照路径是最重要的。
+	1，以斜杠开头的相对路径又分为：
+	1.1，前台路径：由浏览器解析执行的代码中所包含的路径，例如：html，css，js,jsp静态部分中的路径(<img src=""/>,<a href=""></a>)都是由浏览器解析的等。
+		       前台路径的参照路径是web服务器的根路径，即：http://localhost:8080，    前台路径的作用是：查找
+
+
+	1.2，后台路径：java代码中的路径，xml等配置文件中的路径,jsp动态部分(代码块等)是由服务器解析的。
+		       后台路径的参照路径是web应用的根路径，即：http://localhost:8080/项目名称   后台路径的作用是：标识
+		       后台路径有个特例：response.sendRedirect("/otherServlet");其参照路径是：http://localhost:8080。
+		       因为重定向不仅可以跳转到当前应用的其他资源，也可以跳转到其他应用中资源(根目录不确定)。
+
+	2，以路径名称开头的相对路径：
+		路径名称开头的相对路径，其参照路径都是当前访问路径的资源路径(资源路径是可变的)。
+		response.sendRedirect("/otherServlet");在这里不是特例，其参照路径也是当前访问路径的资源路径。
+
+
+
+23，JVM中可能存在的线程安全问题的数据分析
+	A，栈内存数据分析：
+		栈内存是多例的，即JVM会为每个线程创建一个栈，所以其中的数据不是共享的。
+		局部变量是局部的，不是共享的。所以栈内存中的数据不存在线程安全问题。
+
+	B，堆内存数据分析：
+		一个JVM中只存在一个堆内存，堆内存是共享的。被创建的对象是存放在堆内存中的，堆内存中的数据(成员变量)存在线程安全问题。
+
+	C，方法区数据分析：
+		一个JVM中只存在一个方法区，静态变量与常量存放在方法区，方法区是多线程共享的。常量是不能被修改的量，所以常量不存在线程安全问题。
+		静态变量是多线程的，所以静态变量存在线程安全问题。
+	
+
+24，Cookie：服务器生成，保存在客户端的一种信息载体。
+	    同类请求：资源路径相同的请求。Cookie是和资源路径绑定的，只要访问的资源路径相同(在没有禁用掉Cookie的情况下)，就能获得相同的Session。
+
+
+
+25，Session：服务器生成，保存在服务器端。
+	Session域属性：一次会话中有效(从打开浏览器到关闭浏览器就是一次会话)
+
+	//获取Session对象
+	HttpSession session = request.getSession();
+	//向Session域中写入属性
+	session.setAttribute("username", username);
+
+	//获取Session
+	HttpSession session = request.getSession(false);
+	//从Session中读取指定属性
+	String username = null;
+	if(session != null){
+		username = (String) session.getAttribute("username");
+	}
+
+
+26,Session的工作原理（重点）
+	在服务器中系统会为每个会话维护一个Session（不同的浏览器会有不同的Session）。不同的会话，对应不同的Session。
+	(1)写入Session列表
+	服务器对当前应用中的Session是以Map的形式进行管理的，这个Map称为Session列表。该Map的key为一个32位长度的随机串，
+	这个随机串称为JSessionID，value则为Session对象的引用。
+
+	(2)服务器生成并发送Cookie
+	在将Session信息写入Session列表后，系统还会自动将“JSession”作为name，这个32位长度的随机串作为value，以Cookie的形式存放在
+	响应报头中，并随着响应，将Cookie发送到客户端。例如：Set-Cookie: JSESSIONID=FDD10A4D63B53D8045DBA8421530004D;
+
+	(3)客户端接收并发送Cookie
+	客户端接收到这个Cookie以后会将其存放到浏览器的缓存中。即只要客户端不关闭，浏览器缓存中的Cookie就不会消失。
+	当用户提交第二次请求时，会将缓存中的这个Cookie，伴随着请求的头部信息，一块发送到服务器。
+	响应：JSESSIONID=27B9C6590F8B6C7A2C6D095C07ADF958
+	请求：JSESSIONID=27B9C6590F8B6C7A2C6D095C07ADF958
+	可以看出响应和请求的JSESSIONID是一样的。
+
+	(4)从Session列表中查找
+	服务端从请求中读取到客户端发送来的Cookie，并根据Cookie的JSESSIONID的值，从Map中查找相应key所对应的value，
+	即Session对象。然后，对该对象的域属性进行读写操作。
+
+
+
+27，Session失效：
+	默认为30minute。
+	在web.xml中可以通过下面的设置更改失效时间：
+	<!--设置Session的失效时间，单位为minute-->
+	<session-config>
+		<session-timeout>120</session-timeout>
+	</session-config>
+	
+	
+	当禁用掉Cookie后，在地址栏中可以这样输入：
+	http://desktop-jv97d0u:8080/32-httpSession-encodeRedirectUrl/someServlet;jsessionid=57ECBD0EFF772A0731D6746C12CF9B2B(第一次请求response的Cookie)
+	这样也能获取到Session。
+
+	另外一种当禁用掉Cookie后获取session的方法：
+	//重定向
+	String uri = request.getContextPath()+ "/otherServlet";
+	uri = response.encodeRedirectURL(uri);
+	response.sendRedirect(uri);  没禁用掉Cookie此种方法也不会报错。
+	
+	//解决Cookie禁用后，非重定向时的Session跟踪
+	String uri = "otherServlet";
+	uri = response.encodeURL(uri);
+	out.println("<a href='" + uri + "'>跳转</a>到OtherServlet");
+
+	服务器的一次会话与用户的一次会话不同：
+	服务器会话结束的标志是Session对象的失效，而用户的会话结束是关闭浏览器。
+
+	三个域属性的对比
+	ServletContext是跨会话的
+	HttpSession域属性是会话范围的，可以完成跨请求共享数据
+	HttpServletRequest域属性是请求范围的，可以完成跨Servlet共享数据，但这些Servlet必须在同一请求中。
+	在可以保证功能需求下，优先使用小范围的域属性！！！
+	
+
+
+28，两个Web：
+ 	Web容器中存在两个Map,这两个Map的key均为Servlet注册时的<url-pattern>值，但其value是不同的
+ 	第一个Map的value是Servlet实例对象的引用，第二个Map的value为<servlet-class>的值，即Servlet类的全限定性类名。
+    Servlet的执行原理：
+ 	当对Servlet的请求到达Servlet容器时，会先对请求解析，使用解析出的URI作为比较对象，从第一个Map中查找是否有相同的key。
+ 	若存在相同的key，那么读取其value。即Servlet对象的引用，执行该Servlet的service()方法。
+ 	如不存在相同的key，那么再从第二个Map中查找是否有相同的key。若存在相同的key，则读取其value，即要访问的Servlet的全限定性类名。
+ 	然后使用反射机制创建Servlet实例，并将该实例写入到第一个Map中,然后再执行Servlet的service()方法。
+	若第二个Map中也没有找到同名的key，那么跳转到系统错误处理页面，即404。
