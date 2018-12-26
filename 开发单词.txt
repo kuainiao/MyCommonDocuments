@@ -97,4 +97,4 @@
 46，subscription	订阅
 47，notifications	通知
 48，exclusively		唯一地、专门地、特定地
-19，navigate		导航
+49，navigate		导航
