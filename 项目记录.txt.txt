@@ -602,3 +602,13 @@ Optional用法：http://www.importnew.com/22060.html
 		mAllList.remove(i);
 	    }
 	}
+
+
+34，单个List去除重复高效的方法：
+	private static void removeDuplicate(List<String> list) {
+	    LinkedHashSet<String> set = new LinkedHashSet<String>(list.size());
+	    set.addAll(list);
+	    list.clear();
+	    list.addAll(set);
+	}	
+
