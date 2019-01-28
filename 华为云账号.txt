@@ -5,3 +5,4 @@ git权限账号：judajs/wuyongguo	密码：xy742742
 
 处方圈总后台账号密码：chufangquan	admin123
 处方圈供应商后台账号密码：jufuda	jufuda123
+采处方总后台账号密码：caichufang	admin123

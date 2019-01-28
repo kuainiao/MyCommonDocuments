@@ -23,7 +23,7 @@
 	ctrl + alt + t		try...catch等快捷键
 	Ctrl + Alt + M		将代码块抽取为方法
 	依次输入字母iter	foreach快捷键
-	
+	shift + F6		批量修改变量名(光标点中变量，然后按此快捷键，输入变量名即可修改相同变量的名)
 
 
 2，IDEA调试模式：

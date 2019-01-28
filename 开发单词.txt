@@ -48,28 +48,28 @@
 48，denial		拒绝					98，instructions		指南
 49，brute		强力的					99，picked up			拾起			
 50，force		强迫					100，above			上述的
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1，equivalent		相等的
-2，makes sense		有意义的
-3，leak			泄露
-4，prompted		提示
-5，wondering		疑惑的
-6，explicitly		明确地
-7，convenient		方便地
-8，represents		代表
-9，specify		指定
-10，restricted		受限制的
-11，invoking		调用
-12，automatically	自动的
-13，capability		能力
-14，occur		发生
-15，consult		咨询
-16，covers		盖子、封面
-17，shortcut		捷径
-18，in order to		为了
-19，functionality	功能
-20，fluent		流利的
-21，indicate		表明、指示
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1，equivalent		相等的					51，chart			图表
+2，makes sense		有意义的				52，legend			传奇
+3，leak			泄露					53，tooltip			工具提示
+4，prompted		提示					54，axis			轴线
+5，wondering		疑惑的					55，series			系列
+6，explicitly		明确地					56，pie				馅饼
+7，convenient		方便地					57，interval			间隔
+8，represents		代表					58，rotate			旋转
+9，specify		指定					59，Delegate			委派，代表
+10，restricted		受限制的				60，access			入口，出口，接近
+11，invoking		调用					61，Fiddler			小提琴手，游手好闲的人
+12，automatically	自动的					62，visualization		可视化
+13，capability		能力					63，shuffle			洗牌
+14，occur		发生					64，shortage			短缺
+15，consult		咨询					65，multiply			乘法
+16，covers		盖子、封面				66，legend			传奇，图例
+17，shortcut		捷径					67，turnover			营业额
+18，in order to		为了					68，Scale			规模
+19，functionality	功能					69，Ambiguous			模棱两可的
+20，fluent		流利的					70，pharmacy			药店
+21，indicate		表明、指示				71，variety			品种
 22，participate		参与
 23，respective		各自的
 24，Thus far		到目前为止
@@ -98,3 +98,4 @@
 47，notifications	通知
 48，exclusively		唯一地、专门地、特定地
 49，navigate		导航
+50，capacity		容量

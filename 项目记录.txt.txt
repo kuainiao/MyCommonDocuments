@@ -187,6 +187,24 @@ Service层接口继承BaseService接口，Service接口的实现类继承BaseSer
 
 26，商品生成编码方法：CodeGenerator.generate(DatabaseConstant.GOODS_CODE_LENGTH, true)
 
+27，项目中采购商注册时密码编码使用springSecurity的方法：new BCryptPasswordEncoder().encode(model.getPassword())，见PC模块PurchaserServiceImpl类的savePurchaserBasic方法。
+
+28，项目中redis使用的例子：
+	public List<Area> listProvinceArea() {
+        ArrayList<Area> areaList = null;
+        String key = RedisConstant.PROVINCE_LIST;
+       if (stringRedisTemplate != null && stringRedisTemplate.opsForValue().get(key) != null) {
+	    String data  = stringRedisTemplate.opsForValue().get(key).trim();
+	    areaList = SerializationUtils.deserialize(org.apache.commons.codec.binary.Base64.decodeBase64(data));
+	} else {
+	    areaList = (ArrayList)this.areaRepository.findByAreaType(AreaTypeEnum.PROVINCE);
+	    String data = org.apache.commons.codec.binary.Base64.encodeBase64String(SerializationUtils.serialize(areaList));
+	    stringRedisTemplate.opsForValue().set(key, data, 2, TimeUnit.HOURS);
+       }
+	return areaList;
+    }
+
+
 
 --------------------项目中的新知识----------------------------
 1，springdata：
@@ -298,6 +316,10 @@ Service层接口继承BaseService接口，Service接口的实现类继承BaseSer
 	
 	Double.valueOf(responseParamter.getDataBody().getSubAccountMoney())-Double.valueOf(responseParamter.getDataBody().getFreezeMoney())).
 	divide(BigDecimal.valueOf(100).setScale(2,BigDecimal.ROUND_HALF_UP)    // bigdecimal.divide()   bigdecimal的除法，括号里的数是除数。
+
+	String currentLat2 = "2.455675";
+	BigDecimal   bd   =   new   BigDecimal(currentLat2);
+	b=b.divide(new BigDecimal(3),2,BigDecimal.ROUND_HALF_UP);  //Bigdecimal类型相除，四舍五入保留两位小数。
 
 
 13，SpringData的 @Query注解：
@@ -492,3 +514,91 @@ Optional用法：http://www.importnew.com/22060.html
             text += $(this).text() + ",";
         });
         text = text.replace(/\%/g,'%25');  //替换所有的%为%25
+
+
+29，获取一天中起始时间：
+	开始时间：
+		Calendar todayStart = Calendar.getInstance();
+		todayStart.set(Calendar.HOUR_OF_DAY, 0);
+		todayStart.set(Calendar.MINUTE, 0);
+		todayStart.set(Calendar.SECOND, 0);
+		todayStart.set(Calendar.MILLISECOND, 0);
+		todayStart.getTime();
+	结束时间：
+		Calendar todayEnd = Calendar.getInstance();
+		todayEnd.set(Calendar.HOUR_OF_DAY, 23);
+		todayEnd.set(Calendar.MINUTE, 59);
+		todayEnd.set(Calendar.SECOND, 59);
+		todayEnd.set(Calendar.MILLISECOND, 999);
+		todayEnd.getTime();
+
+
+30，获取前30天的日期：
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+        Date today = new Date();
+        String endDate = sdf.format(today);//当前日期
+        Calendar theCa = Calendar.getInstance();
+        theCa.setTime(today);
+        theCa.add(theCa.DATE, -30);//最后一个数字30可改，30天的意思
+        Date start = theCa.getTime();
+        String startDate = sdf.format(start);//三十天之前日期	
+
+
+31，获取本周的开始时间和结束时间：
+	Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        int dayWeek = c.get(Calendar.DAY_OF_WEEK);
+        // 判断要计算的日期是否是周日，如果是则减一天计算周六的，否则会出问题，计算到下一周去了
+        if(1 == dayWeek) {
+            c.add(Calendar.DAY_OF_MONTH, -1);
+        }
+
+        // 设置一个星期的第一天，按中国的习惯一个星期的第一天是星期一  
+        c.setFirstDayOfWeek(Calendar.MONDAY);
+        // 获得当前日期是一个星期的第几天  
+        int day = c.get(Calendar.DAY_OF_WEEK);
+
+        // 根据日历的规则，给当前日期减去星期几与一个星期第一天的差值  
+        c.add(Calendar.DATE, c.getFirstDayOfWeek() - day);
+        Date startWeek = c.getTime();
+
+        c.add(Calendar.DATE, 6);
+        Date endWeek = c.getTime();
+
+32，获取本月的第一天和最后一天：
+	//获取本月中的第一天和最后一天
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+	Calendar c = Calendar.getInstance();
+	c.add(Calendar.MONTH, 0);
+	c.set(Calendar.DAY_OF_MONTH, 1);
+	System.out.println(sdf.format(c.getTime()));
+	
+	c.add(Calendar.MONTH, 1);
+        c.set(Calendar.DAY_OF_MONTH, 0);
+        System.out.println(sdf.format(c.getTime()));
+
+33，两个List快速去除重复的方法：
+	//第一步：构建mAllList的HashMap
+	//将mAllList中的元素作为键，如果不是String类，需要实现hashCode和equals方法
+	//将mAllList中的元素对应的位置作为值
+	Map<String, Integer> map = new HashMap<>();
+	for (int i = 0; i < mAllList.size(); i++) {
+	    map.put(mAllList.get(i), i);
+	}
+
+	//第二步：利用map遍历mSubList，查找重复元素
+	//把mAllList中所有查到的重复元素的位置置空
+	for (int i = 0; i < mSubList.size(); i++) {
+	    Integer pos = map.get(mSubList.get(i));
+	    if (pos==null) {
+		continue;
+	    }
+	    mAllList.set(pos, null);
+	}
+
+	//第三步：把mAllList中所有的空元素移除
+	for (int i = mAllList.size()-1; i>=0; i--) {
+	    if (mAllList.get(i)==null) {
+		mAllList.remove(i);
+	    }
+	}
